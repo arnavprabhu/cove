@@ -172,5 +172,6 @@ private struct MenuRowButtonStyle: ButtonStyle {
         configuration.label
             .contentShape(Rectangle())
             .background(configuration.isPressed ? Theme.accentFill : .clear, in: RoundedRectangle(cornerRadius: 5))
+            .pointingHandCursor()
     }
 }

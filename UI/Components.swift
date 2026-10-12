@@ -70,6 +70,7 @@ struct PrimaryButtonStyle: ButtonStyle {
             .background(Theme.accentFill.opacity(configuration.isPressed ? 0.8 : 1),
                         in: RoundedRectangle(cornerRadius: large ? 10 : 8))
             .opacity(isEnabled ? 1 : 0.4)
+            .pointingHandCursor()
     }
 }
 
@@ -86,6 +87,7 @@ struct SecondaryButtonStyle: ButtonStyle {
             .frame(height: 32)
             .background(Theme.control.opacity(configuration.isPressed ? 0.7 : 1), in: RoundedRectangle(cornerRadius: 8))
             .opacity(isEnabled ? 1 : 0.4)
+            .pointingHandCursor()
     }
 }
 
@@ -179,9 +181,33 @@ struct CovePlainButtonStyle: ButtonStyle {
         configuration.label
             .contentShape(Rectangle())
             .opacity(configuration.isPressed ? 0.6 : 1)
+            .pointingHandCursor()
     }
 }
 
 extension ButtonStyle where Self == CovePlainButtonStyle {
     static var coveplain: CovePlainButtonStyle { CovePlainButtonStyle() }
+}
+
+
+/// Pointing-hand cursor over a clickable control (only while it's enabled). Built into Cove's button styles.
+struct PointingHandCursor: ViewModifier {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func body(content: Content) -> some View {
+        if #available(macOS 15, *) {
+            content.pointerStyle(isEnabled ? .link : nil)
+        } else {
+            content.onContinuousHover { phase in
+                switch phase {
+                case .active: if isEnabled { NSCursor.pointingHand.set() }
+                case .ended: NSCursor.arrow.set()
+                }
+            }
+        }
+    }
+}
+
+extension View {
+    func pointingHandCursor() -> some View { modifier(PointingHandCursor()) }
 }

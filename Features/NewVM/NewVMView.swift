@@ -133,7 +133,7 @@ struct NewVMView: View {
                         HStack {
                             Text("Sized for your Mac").font(.system(size: 13, weight: .semibold))
                             Spacer()
-                            Button("Customize…") { step = 2 }.buttonStyle(.link)
+                            Button("Customize…") { step = 2 }.buttonStyle(.link).pointingHandCursor()
                         }
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                             summaryCell("CPU", "\(cpu) cores")
@@ -365,7 +365,7 @@ struct NewVMView: View {
                                 .buttonStyle(.coveplain).foregroundStyle(Theme.destructive).accessibilityLabel("Remove shared folder \(share.name)")
                         }
                     }
-                    Button { addFolder() } label: { Label("Add folder…", systemImage: "plus") }.buttonStyle(.link)
+                    Button { addFolder() } label: { Label("Add folder…", systemImage: "plus") }.buttonStyle(.link).pointingHandCursor()
                 }
             }
             .frame(maxWidth: .infinity)
@@ -393,7 +393,7 @@ struct NewVMView: View {
     private var footer: some View {
         HStack(spacing: 10) {
             if step == 2 {
-                Button("Restore recommended") { resetResources() }.buttonStyle(.link)
+                Button("Restore recommended") { resetResources() }.buttonStyle(.link).pointingHandCursor()
             } else {
                 Text(footerText).font(Theme.Font.small).foregroundStyle(Theme.textTertiary).lineLimit(2)
             }

@@ -104,7 +104,7 @@ struct SnapshotsView: View {
             } label: {
                 Image(systemName: "chevron.left")
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.borderless).pointingHandCursor()
             .help("Back")
             .accessibilityLabel("Back")
 

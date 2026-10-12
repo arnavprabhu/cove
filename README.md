@@ -47,6 +47,11 @@ Regenerate all sizes into `Resources/Assets.xcassets/AppIcon.appiconset` with:
 for s in 16 32 64 128 256 512 1024; do swift scripts/make-icon.swift Resources/Assets.xcassets/AppIcon.appiconset/icon_$s.png $s; done
 ```
 
+## SSH & agent access
+
+Every VM can be reached with `ssh cove-<vm-name>` by you and by coding agents on your Mac — a disposable
+sandbox for agentic development. See **[docs/ssh-and-agents.md](docs/ssh-and-agents.md)** for the walkthrough.
+
 ## Keyboard
 
 | Action | Shortcut |

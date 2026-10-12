@@ -70,6 +70,14 @@ struct VMWindow: View {
                     Button("Cancel", role: .cancel) {}
                 } message: { Text("Save the current VM state as a snapshot.") }
                 .coveAlert($alert)
+                .onChange(of: captureKeyboard) { _, captured in
+                    showCaptureToast = captured
+                    guard captured else { return }
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(3))
+                        showCaptureToast = false
+                    }
+                }
                 .onChange(of: state) { oldValue, newValue in
                     if oldValue.isLive && !newValue.isLive { captureKeyboard = false }
                 }
@@ -88,75 +96,58 @@ struct VMWindow: View {
 
     @ToolbarContentBuilder
     private func consoleToolbar(_ item: VMItem) -> some ToolbarContent {
-        ToolbarItemGroup(placement: .principal) {
-            HStack(spacing: 2) {
-                Button {
-                    if state == .paused { runAsync { try await session?.resume() } }
-                    else if state == .running { runAsync { try await session?.pause() } }
-                } label: { Image(systemName: state == .paused ? "play.fill" : "pause.fill") }
-                    .help(state == .paused ? "Resume virtual machine" : "Pause virtual machine")
-                    .accessibilityLabel(state == .paused ? "Resume" : "Pause")
-                    .keyboardShortcut("p", modifiers: [.command, .option])
-                    .disabled(state != .paused && state != .running)
-
-                Button { showStopMenu = true } label: { Image(systemName: "power") }
-                    .help("Shut down, suspend, or force stop")
-                    .accessibilityLabel("Shut Down")
-                    .keyboardShortcut(".", modifiers: [.command, .option])
-                    .disabled(!state.isLive)
-
-                Button { confirmRestart = true } label: { Image(systemName: "arrow.clockwise") }
-                    .help("Restart virtual machine")
-                    .accessibilityLabel("Restart")
-                    .keyboardShortcut("r", modifiers: [.command, .option])
-                    .disabled(!state.isLive)
-
-                Divider().frame(height: 20).padding(.horizontal, 5)
-
-                Button {
-                    snapshotName = defaultSnapshotName
-                    showSnapshotPrompt = true
-                } label: { Image(systemName: "camera") }
-                    .help("Take a snapshot")
-                    .accessibilityLabel("Take Snapshot")
-                    .keyboardShortcut("s", modifiers: [.command, .shift])
-                    .disabled(state == .starting || state == .saving || state == .stopping)
-
-                Button { showShares.toggle() } label: { Image(systemName: "folder") }
-                    .popover(isPresented: $showShares, arrowEdge: .bottom) { sharesPopover(item).frame(width: 330) }
-                    .help("Shared folders")
-                    .accessibilityLabel("Shared Folders")
-
-                Button { showDisplay.toggle() } label: { Image(systemName: "display") }
-                    .popover(isPresented: $showDisplay, arrowEdge: .bottom) { displayPopover(item).padding(16).frame(width: 280) }
-                    .help("Display resolution and resize behavior")
-                    .accessibilityLabel("Display")
-
-                Button {
-                    captureKeyboard.toggle()
-                    if captureKeyboard {
-                        showCaptureToast = true
-                        Task { @MainActor in
-                            try? await Task.sleep(for: .seconds(3))
-                            showCaptureToast = false
-                        }
-                    } else { showCaptureToast = false }
-                } label: { Image(systemName: "keyboard") }
-                    .tint(captureKeyboard ? Theme.accent : nil)
-                    .help(captureKeyboard ? "Release keyboard and pointer capture" : "Capture keyboard and pointer")
-                    .accessibilityLabel(captureKeyboard ? "Release Keyboard Capture" : "Capture Keyboard and Pointer")
-                    .disabled(!state.isLive)
-
-                Button { openWindow(id: WindowID.vmSettings, value: vmID) } label: { Image(systemName: "slider.horizontal.3") }
-                    .help("Virtual machine settings")
-                    .accessibilityLabel("VM Settings")
-                    .keyboardShortcut("i")
-
-                Button { NSApp.keyWindow?.toggleFullScreen(nil) } label: { Image(systemName: "arrow.up.left.and.arrow.down.right") }
-                    .help("Enter or exit full screen (⌃⌘F)")
-                    .accessibilityLabel("Toggle Full Screen")
+        // Power controls. Shortcuts live in the Virtual Machine menu.
+        ToolbarItemGroup(placement: .primaryAction) {
+            Button {
+                if state == .paused { runAsync { try await session?.resume() } }
+                else if state == .running { runAsync { try await session?.pause() } }
+            } label: {
+                Label(state == .paused ? "Resume" : "Pause", systemImage: state == .paused ? "play.fill" : "pause.fill")
             }
-            .buttonStyle(.plain)
+            .help(state == .paused ? "Resume virtual machine" : "Pause virtual machine")
+            .disabled(state != .paused && state != .running)
+
+            Button { showStopMenu = true } label: { Label("Shut Down", systemImage: "power") }
+                .help("Shut down, suspend, or force stop")
+                .disabled(!state.isLive)
+
+            Button { confirmRestart = true } label: { Label("Restart", systemImage: "arrow.clockwise") }
+                .help("Restart virtual machine")
+                .disabled(!state.isLive)
+        }
+
+        // VM tools, separated from power controls like the mockup.
+        ToolbarItemGroup(placement: .primaryAction) {
+            Button {
+                snapshotName = defaultSnapshotName
+                showSnapshotPrompt = true
+            } label: { Label("Take Snapshot", systemImage: "camera") }
+                .help("Take a snapshot")
+                .disabled(state == .starting || state == .saving || state == .stopping)
+
+            Button { showShares.toggle() } label: { Label("Shared Folders", systemImage: "folder") }
+                .popover(isPresented: $showShares, arrowEdge: .bottom) { sharesPopover(item).frame(width: 330) }
+                .help("Shared folders")
+
+            Button { showDisplay.toggle() } label: { Label("Display", systemImage: "display") }
+                .popover(isPresented: $showDisplay, arrowEdge: .bottom) { displayPopover(item).padding(16).frame(width: 280) }
+                .help("Display resolution and resize behavior")
+
+            Toggle(isOn: $captureKeyboard) { Label("Capture Keyboard", systemImage: "keyboard") }
+                .toggleStyle(.button)
+                .help(captureKeyboard ? "Release keyboard and pointer capture" : "Capture keyboard and pointer")
+                .accessibilityLabel(captureKeyboard ? "Release Keyboard Capture" : "Capture Keyboard and Pointer")
+                .disabled(!state.isLive)
+
+            Button { openWindow(id: WindowID.vmSettings, value: vmID) } label: {
+                Label("Settings", systemImage: "slider.horizontal.3")
+            }
+            .help("Virtual machine settings")
+
+            Button { NSApp.keyWindow?.toggleFullScreen(nil) } label: {
+                Label("Full Screen", systemImage: "arrow.up.left.and.arrow.down.right")
+            }
+            .help("Enter or exit full screen (⌃⌘F)")
         }
     }
 

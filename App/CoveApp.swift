@@ -54,6 +54,7 @@ struct RootView: View {
     @Environment(VMLibrary.self) private var library
     @State private var showNewVM = false
     @State private var commandErrors = CommandErrorCenter.shared
+    @State private var diskSpace = DiskSpaceMonitor.shared
 
     var body: some View {
         Group {
@@ -72,6 +73,12 @@ struct RootView: View {
             set: { commandErrors.alert = $0 }
         ))
         .sheet(isPresented: $showNewVM) { NewVMView(onDismiss: { showNewVM = false }) }
+        .onAppear { diskSpace.startPolling(at: { library.rootURL }) }
+        // Warn once each time free space drops into the critical range while VMs are running.
+        .onChange(of: diskSpace.criticalRevision) {
+            guard !library.liveItems.isEmpty, let available = diskSpace.takeCriticalWarning() else { return }
+            commandErrors.present(.lowDiskSpace(available: available))
+        }
         .onReceive(NotificationCenter.default.publisher(for: .coveNewVM)) { _ in showNewVM = true }
     }
 }

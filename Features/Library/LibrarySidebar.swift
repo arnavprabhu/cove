@@ -48,7 +48,7 @@ struct LibrarySidebar: View {
                                     },
                                     onDelete: {
                                         alert = .confirmDelete(vmID: item.id, name: item.name,
-                                                               snapshotCount: item.snapshots.count)
+                                                               snapshotCount: item.snapshots.count, bytes: item.bundle.totalAllocated)
                                     }
                                 )
                             }

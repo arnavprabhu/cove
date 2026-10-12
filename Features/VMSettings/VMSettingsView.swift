@@ -516,8 +516,10 @@ struct VMSettingsView: View {
                 Spacer()
                 Button("Start in Recovery") {
                     Task {
-                        do { try await library.start(item, recovery: true) }
-                        catch { alert = .from(error) }
+                        do {
+                            try await library.start(item, recovery: true)
+                            AppRouter.shared.openConsole(item.id)
+                        } catch { alert = .from(error, starting: item) }
                     }
                 }
                 .buttonStyle(.covesecondary)
@@ -564,7 +566,7 @@ struct VMSettingsView: View {
                 Text("Delete this VM and its snapshots")
                 Spacer()
                 Button("Delete…") {
-                    alert = .confirmDelete(vmID: item.id, name: item.name, snapshotCount: item.snapshots.count)
+                    alert = .confirmDelete(vmID: item.id, name: item.name, snapshotCount: item.snapshots.count, bytes: item.bundle.totalAllocated)
                 }
                 .buttonStyle(SecondaryButtonStyle(destructive: true))
                 .disabled(isLive)

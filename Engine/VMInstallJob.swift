@@ -48,7 +48,7 @@ final class VMInstallJob: Identifiable {
     }
 
     let id = UUID()
-    let request: Request
+    private(set) var request: Request
     private(set) var stage: Stage = .check
     private(set) var status: Status = .running
     /// 0…1 progress of the current stage.
@@ -83,8 +83,9 @@ final class VMInstallJob: Identifiable {
     }
 
     /// Retry after a failure (downloads resume from where they stopped).
-    func retry() {
+    func retry(using file: URL? = nil) {
         guard case .failed = status else { return }
+        if let file { request.source = .file(file) }
         run()
     }
 
@@ -96,6 +97,20 @@ final class VMInstallJob: Identifiable {
             lib.discard(item)
         }
     }
+
+    #if DEBUG
+    /// A failed download with no network or VM work, for the PNG render harness.
+    static func failedDownloadSample(in library: VMLibrary) -> VMInstallJob {
+        let job = VMInstallJob(request: Request(name: "Clean Sonoma", cpuCount: 4, memoryBytes: Bytes.gb(8),
+                                               diskBytes: Bytes.gb(80)), library: library)
+        job.stage = .download
+        job.stageProgress = 0.62
+        job.bytesExpected = 27_000_000_000
+        job.bytesReceived = 16_740_000_000
+        job.status = .failed("The connection to Apple was lost.", resumable: true)
+        return job
+    }
+    #endif
 
     // MARK: Pipeline
 

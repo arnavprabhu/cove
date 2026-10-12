@@ -1,10 +1,13 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct InstallProgressView: View {
     var jobID: UUID
     @Environment(VMLibrary.self) private var library
     @Environment(\.dismiss) private var dismiss
     @State private var confirmsCancel = false
+    @State private var alert: CoveAlert?
+    @State var diskSpace = DiskSpaceMonitor.shared
 
     private var job: VMInstallJob? { library.installJob(id: jobID) }
     private var itemName: String { job?.request.name ?? "macOS VM" }
@@ -29,8 +32,17 @@ struct InstallProgressView: View {
             HStack { Spacer(); Text("Installing “\(itemName)”").font(.system(size: 13, weight: .semibold)); Spacer() }
                 .frame(height: 44).background(Theme.toolbar)
                 .overlay(alignment: .bottom) { Rectangle().fill(Theme.separator).frame(height: 1) }
+            if diskSpace.level != .normal, let available = diskSpace.available {
+                LowDiskSpaceBanner(available: available).padding(.horizontal, 24).padding(.top, 14)
+            }
             if let job {
-                content(job)
+                if case .failed(_, resumable: true) = job.status {
+                    DownloadFailureView(progress: job.bytesExpected > 0 ? Double(job.bytesReceived) / Double(job.bytesExpected) : nil,
+                                        onUseFile: { useRestoreFile(job) }, onResume: { retry(job) })
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    content(job)
+                }
             } else {
                 ContentUnavailableView("Installation not found", systemImage: "exclamationmark.triangle", description: Text("This installation may have finished or been removed."))
             }
@@ -38,6 +50,7 @@ struct InstallProgressView: View {
         }
         .background(Theme.windowBackground)
         .frame(minWidth: 820, minHeight: 560)
+        .coveAlert($alert)
         .confirmationDialog("Cancel this installation?", isPresented: $confirmsCancel, titleVisibility: .visible) {
             Button("Cancel Installation", role: .destructive) { job?.cancel() }
             Button("Keep Installing", role: .cancel) {}
@@ -184,8 +197,8 @@ struct InstallProgressView: View {
             if let job, !isFinished, !isFailed, !isCancelled {
                 Button("Continue in Background") { job.isInBackground = true; dismiss() }.buttonStyle(.covesecondary)
             }
-            if let job, isFailed {
-                Button(retryTitle(job)) { job.retry() }.buttonStyle(.coveprimary)
+            if let job, isFailed, !isResumable(job) {
+                Button("Try Again") { retry(job) }.buttonStyle(.coveprimary)
             }
             if let job, isFinished, let vmID = job.vmID {
                 Button("Open VM") { AppRouter.shared.openConsole(vmID); dismiss() }.buttonStyle(.coveprimary)
@@ -197,8 +210,25 @@ struct InstallProgressView: View {
         .overlay(alignment: .top) { Rectangle().fill(Theme.separator).frame(height: 1) }
     }
 
-    private func retryTitle(_ job: VMInstallJob) -> String {
-        if case .failed(_, let resumable) = job.status, resumable { return "Resume Download" }
-        return "Try Again"
+    private func isResumable(_ job: VMInstallJob) -> Bool {
+        if case .failed(_, resumable: true) = job.status { return true }
+        return false
+    }
+
+    private func retry(_ job: VMInstallJob, using file: URL? = nil) {
+        let available = library.freeSpace
+        guard available >= HostInfo.minimumVMStartFreeSpace else {
+            alert = .lowDiskSpace(available: available)
+            return
+        }
+        job.retry(using: file)
+    }
+
+    private func useRestoreFile(_ job: VMInstallJob) {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [UTType(filenameExtension: "ipsw") ?? .data]
+        panel.prompt = "Use Restore Image"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        retry(job, using: url)
     }
 }

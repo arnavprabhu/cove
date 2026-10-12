@@ -58,7 +58,7 @@ struct VMWindow: View {
                     Button("Cancel", role: .cancel) {}
                 } message: { Text("Unsaved work in the guest may be lost.") }
                 .confirmationDialog("Restart \(item.name)?", isPresented: $confirmRestart, titleVisibility: .visible) {
-                    Button("Restart", role: .destructive) { runAsync { try await library.restart(item) } }
+                    Button("Restart", role: .destructive) { runAsync(starting: item) { try await library.restart(item) } }
                     Button("Cancel", role: .cancel) {}
                 } message: { Text("The virtual machine will shut down and start again.") }
                 .alert("Take Snapshot", isPresented: $showSnapshotPrompt) {
@@ -170,11 +170,11 @@ struct VMWindow: View {
             Text(item.state == .suspended ? "Suspended" : item.state.label)
                 .font(.system(size: 16, weight: .semibold)).foregroundStyle(Theme.textPrimary)
             if let message = session?.lastError { Text(message).font(Theme.Font.small).foregroundStyle(Theme.destructive).multilineTextAlignment(.center).frame(maxWidth: 420) }
-            Button(item.state == .suspended ? "Resume" : "Start") { runAsync { try await library.start(item) } }
+            Button(item.state == .suspended ? "Resume" : "Start") { runAsync(starting: item) { try await library.start(item) } }
                 .buttonStyle(.coveprimary)
-                .disabled(item.installJob != nil || !library.canStartAnother)
+                .disabled(item.installJob != nil)
             if !library.canStartAnother {
-                Text("Two macOS VMs are already running. Shut down or suspend one before starting another.")
+                Text("Two macOS VMs are already running. Start to choose a VM to suspend.")
                     .font(Theme.Font.small).foregroundStyle(Theme.textSecondary).multilineTextAlignment(.center).frame(maxWidth: 430)
             }
         }
@@ -299,9 +299,9 @@ struct VMWindow: View {
         do { try action() } catch { alert = .from(error) }
     }
 
-    private func runAsync(_ action: @escaping () async throws -> Void) {
+    private func runAsync(starting item: VMItem? = nil, _ action: @escaping () async throws -> Void) {
         Task { @MainActor in
-            do { try await action() } catch { alert = .from(error) }
+            do { try await action() } catch { alert = .from(error, starting: item) }
         }
     }
 }

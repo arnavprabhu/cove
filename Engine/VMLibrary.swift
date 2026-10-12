@@ -137,6 +137,7 @@ final class VMLibrary {
             if session.state == .paused { try await session.resume() }
             return
         }
+        try checkStartSpace()
         guard canStartAnother else { throw CoveError.licenseLimit }
         guard item.installJob == nil else { throw CoveError.vmIsRunning }
         if let mac = item.config.macAddress, VZMACAddress(string: mac) != nil {} else {
@@ -162,8 +163,16 @@ final class VMLibrary {
     }
 
     func restart(_ item: VMItem) async throws {
+        try checkStartSpace()
         if let session = item.session { try await session.forceStop() }
         try await start(item)
+    }
+
+    private func checkStartSpace() throws {
+        let available = freeSpace
+        guard available >= HostInfo.minimumVMStartFreeSpace else {
+            throw CoveError.notEnoughDiskSpace(needed: HostInfo.minimumVMStartFreeSpace, available: available)
+        }
     }
 
     /// Suspends every running VM (used on quit when the "suspend on quit" preference is on).
@@ -292,6 +301,14 @@ final class VMLibrary {
         job.run()
         return job
     }
+
+    #if DEBUG
+    func addFailedDownloadSample() -> VMInstallJob {
+        let job = VMInstallJob.failedDownloadSample(in: self)
+        installJobs.append(job)
+        return job
+    }
+    #endif
 
     func installJob(id: UUID) -> VMInstallJob? { installJobs.first { $0.id == id } }
 

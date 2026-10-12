@@ -75,7 +75,7 @@ struct VMDetailView: View {
         }
         .background {
             Button("") {
-                alert = .confirmDelete(vmID: item.id, name: item.name, snapshotCount: item.snapshots.count)
+                alert = .confirmDelete(vmID: item.id, name: item.name, snapshotCount: item.snapshots.count, bytes: item.bundle.totalAllocated)
             }
             .keyboardShortcut(.delete, modifiers: .command)
             .opacity(0)
@@ -306,7 +306,7 @@ struct VMDetailView: View {
                     },
                     onDelete: {
                         alert = .confirmDelete(vmID: item.id, name: item.name,
-                                               snapshotCount: item.snapshots.count)
+                                               snapshotCount: item.snapshots.count, bytes: item.bundle.totalAllocated)
                     }
                 )
             } label: {

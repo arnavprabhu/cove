@@ -20,7 +20,7 @@ enum VMActions {
                     try await library.start(item)
                     openWindow(id: WindowID.console, value: item.id)
                 } catch {
-                    alert.wrappedValue = .from(error)
+                    alert.wrappedValue = .from(error, starting: item)
                 }
             }
         }
@@ -33,7 +33,7 @@ enum VMActions {
                 try await library.start(item, recovery: recovery)
                 openWindow(id: WindowID.console, value: item.id)
             } catch {
-                alert.wrappedValue = .from(error)
+                alert.wrappedValue = .from(error, starting: item)
             }
         }
     }

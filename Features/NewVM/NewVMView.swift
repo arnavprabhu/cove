@@ -22,6 +22,7 @@ struct NewVMView: View {
     @State private var network: NetworkMode = .nat
     @State private var shares: [SharedFolder] = []
     @State private var alert: CoveAlert?
+    @State var diskSpace = DiskSpaceMonitor.shared
 
     private var planner: ResourcePlanner { HostInfo.planner(freeDiskAt: library.rootURL) }
     private var profile: ResourcePlanner.Profile { ResourcePlanner.Profile(rawValue: defaultProfile) ?? .balanced }
@@ -54,6 +55,9 @@ struct NewVMView: View {
             .background(Theme.toolbar)
             .overlay(alignment: .bottom) { Rectangle().fill(Theme.separator).frame(height: 1) }
 
+            if diskSpace.level != .normal, let available = diskSpace.available {
+                LowDiskSpaceBanner(available: available).padding(.horizontal, 24).padding(.top, 14)
+            }
             stepIndicator.padding(.top, 18)
             Group {
                 if step == 1 { sourceStep } else { customizeStep }
@@ -370,6 +374,11 @@ struct NewVMView: View {
     }
 
     private func createInstall() {
+        let available = library.freeSpace
+        guard available >= HostInfo.minimumVMStartFreeSpace else {
+            alert = .lowDiskSpace(available: available)
+            return
+        }
         guard canCreate else { return }
         let request = VMInstallJob.Request(name: name.trimmingCharacters(in: .whitespacesAndNewlines), source: chosenSource,
                                            cpuCount: planner.clampCPU(cpu), memoryBytes: planner.clampMemory(memory), diskBytes: planner.clampDisk(disk),

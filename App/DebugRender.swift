@@ -24,6 +24,8 @@ enum DebugRender {
         let empty = VMLibrary(rootURL: root.appending(path: "empty"))
         let sample = VMLibrary(rootURL: root.appending(path: "sample"))
         let first = makeSampleVMs(in: sample)
+        let lowDisk = DiskSpaceMonitor(available: 12_000_000_000)
+        let failedDownload = sample.addFailedDownloadSample()
 
         let screens: [(String, CGSize, VMLibrary, AnyView)] = [
             ("01-Welcome", CGSize(width: 1200, height: 760), empty, AnyView(WelcomeView())),
@@ -35,6 +37,15 @@ enum DebugRender {
             ("09-VMSettings", CGSize(width: 760, height: 600), sample, AnyView(VMSettingsView(vmID: first))),
             ("10-AppSettings", CGSize(width: 780, height: 540), sample, AnyView(AppSettingsView())),
             ("11-Unsupported", CGSize(width: 900, height: 600), sample, AnyView(UnsupportedMacView())),
+            ("12-LicenseLimit", CGSize(width: 430, height: 360), sample,
+             AnyView(LicenseLimitView(targetName: "Clean Sonoma", runningItems: [
+                .init(id: UUID(), name: "Sequoia QA", canSuspend: true),
+                .init(id: UUID(), name: "Tahoe Dev", canSuspend: true)
+             ], onCancel: {}, onStart: { _ in }).frame(maxWidth: .infinity, maxHeight: .infinity).background(Theme.windowBackground))),
+            ("13-Library-lowdisk", CGSize(width: 1200, height: 760), sample, AnyView(LibraryView(diskSpace: lowDisk))),
+            ("14-NewVM-lowdisk", CGSize(width: 1000, height: 680), sample, AnyView(NewVMView(diskSpace: lowDisk))),
+            ("15-Install-downloadFailed", CGSize(width: 1000, height: 680), sample,
+             AnyView(InstallProgressView(jobID: failedDownload.id, diskSpace: lowDisk))),
         ]
         for (name, size, library, view) in screens {
             for (suffix, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {

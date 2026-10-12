@@ -27,6 +27,8 @@ enum DebugRender {
         let lowDisk = DiskSpaceMonitor(available: 12_000_000_000)
         let failedDownload = sample.addFailedDownloadSample()
         let downloading = sample.addDownloadingSample()
+        let emptyInstalling = VMLibrary(rootURL: root.appending(path: "empty-installing"))
+        _ = emptyInstalling.addDownloadingSample()
         let remote = VMLibrary(rootURL: root.appending(path: "remote"))
         let remoteID = makeSampleVMs(in: remote)
         if let item = remote.item(id: remoteID) {
@@ -52,6 +54,8 @@ enum DebugRender {
 
         let screens: [(String, CGSize, VMLibrary, AnyView)] = [
             ("01-Welcome", CGSize(width: 1200, height: 760), empty, AnyView(WelcomeView())),
+            ("01b-Welcome-installing", CGSize(width: 1200, height: 760), emptyInstalling, AnyView(WelcomeView())),
+            ("08b-MenuBar-installing", CGSize(width: 360, height: 520), emptyInstalling, AnyView(MenuBarView())),
             ("02-NewVM", CGSize(width: 1000, height: 720), sample, AnyView(NewVMView())),
             ("02b-NewVM-agent-short", CGSize(width: 900, height: 560), sample, AnyView(NewVMView(initialPurpose: .agentSandbox))),
             ("05-Library", CGSize(width: 1200, height: 760), sample, AnyView(LibraryView())),

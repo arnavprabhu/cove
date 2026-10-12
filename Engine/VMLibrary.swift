@@ -381,6 +381,9 @@ final class VMLibrary {
 
     func installJob(id: UUID) -> VMInstallJob? { installJobs.first { $0.id == id } }
 
+    /// Installs to surface in the Welcome screen, sidebar, menu bar and Dock (running or needing attention).
+    var activeInstallJobs: [VMInstallJob] { installJobs.filter(\.isActive) }
+
     func removeInstallJob(_ job: VMInstallJob) { installJobs.removeAll { $0 === job } }
 
     /// Called by VMInstallJob once the bundle exists so the VM appears in the sidebar as "Installing".

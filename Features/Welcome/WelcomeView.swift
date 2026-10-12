@@ -13,7 +13,11 @@ struct WelcomeView: View {
         HStack(spacing: 0) {
             VStack(spacing: 0) {
                 Spacer()
-                CoveLogo(size: 140)
+                // An install that was sent to the background keeps reporting here until its VM appears.
+                ForEach(library.activeInstallJobs) { job in
+                    InstallActivityView(job: job).padding(.bottom, 24)
+                }
+                CoveLogo(size: library.activeInstallJobs.isEmpty ? 140 : 96)
                 Text("Welcome to Cove")
                     .font(Theme.Font.largeTitle)
                     .padding(.top, 24)

@@ -68,6 +68,44 @@ final class VMInstallJob: Identifiable {
 
     var isFinished: Bool { status != .running }
 
+    /// Still worth showing outside the install window: running, or stopped on an error the user can act on.
+    var isActive: Bool {
+        switch status {
+        case .running, .failed: true
+        case .cancelled, .finished: false
+        }
+    }
+
+    /// Short form for narrow rows: "Downloading · 12%".
+    var shortStatusLine: String {
+        if case .failed(_, let resumable) = status { return resumable ? "Paused — open to resume" : "Needs attention" }
+        let what: String = switch stage {
+        case .check: "Checking"
+        case .download: "Downloading"
+        case .install: "Installing"
+        case .firstBoot: "Starting"
+        case .done: "Finishing"
+        }
+        return "\(what) · \(Int((overallProgress * 100).rounded()))%"
+    }
+
+    /// One line for compact status UI: "Downloading macOS · 12% · about 6 min left".
+    var statusLine: String {
+        if case .failed(_, let resumable) = status {
+            return resumable ? "Download paused — open to resume" : "Couldn’t finish — open for details"
+        }
+        let what: String = switch stage {
+        case .check: "Checking this Mac"
+        case .download: "Downloading macOS"
+        case .install: "Installing macOS"
+        case .firstBoot: "Starting for the first time"
+        case .done: "Finishing up"
+        }
+        var parts = [what, "\(Int((overallProgress * 100).rounded()))%"]
+        if let eta = Durations.remaining(estimatedSecondsRemaining) { parts.append(eta) }
+        return parts.joined(separator: " · ")
+    }
+
     private weak var library: VMLibrary?
     /// The installer's VM while macOS is being written; counts toward the two-guest limit.
     private(set) var installerVM: VZVirtualMachine?

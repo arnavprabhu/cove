@@ -99,6 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     func applicationDidFinishLaunching(_ notification: Notification) {
         UNUserNotificationCenter.current().delegate = self
         InstallNotifier.requestAuthorization()
+        MainActor.assumeIsolated { InstallDockBadge.start(library: VMLibrary.shared) }
         MainActor.assumeIsolated {
             #if DEBUG
             SmokeTest.runIfRequested()

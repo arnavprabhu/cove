@@ -19,7 +19,10 @@ struct MenuBarView: View {
                 .font(Theme.Font.captionStrong).foregroundStyle(Theme.textTertiary)
                 .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 12).padding(.vertical, 5)
 
-            if library.items.isEmpty {
+            ForEach(library.activeInstallJobs.filter { job in job.vmID.flatMap { library.item(id: $0) } == nil }) { job in
+                InstallActivityView(job: job, style: .row).padding(.horizontal, 12).padding(.vertical, 4)
+            }
+            if library.items.isEmpty && library.activeInstallJobs.isEmpty {
                 Text("No virtual machines yet").font(Theme.Font.small).foregroundStyle(Theme.textSecondary)
                     .frame(maxWidth: .infinity, minHeight: 70)
             } else {

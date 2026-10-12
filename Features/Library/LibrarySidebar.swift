@@ -25,6 +25,15 @@ struct LibrarySidebar: View {
     var body: some View {
         VStack(spacing: 0) {
             List(selection: $selection) {
+                // Installs still downloading have no VM yet; once they do, the VM's own row shows progress.
+                let pending = library.activeInstallJobs.filter { job in job.vmID.flatMap { library.item(id: $0) } == nil }
+                if !pending.isEmpty {
+                    Section {
+                        ForEach(pending) { job in InstallActivityView(job: job, style: .row) }
+                    } header: {
+                        Text("Installing")
+                    }
+                }
                 Section {
                     ForEach(filteredVMs) { item in
                         VMSidebarRow(item: item, selected: selection == .vm(item.id))

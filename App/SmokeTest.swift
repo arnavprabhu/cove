@@ -1,8 +1,10 @@
+#if DEBUG
 import AppKit
 
-/// Headless engine check (milestone 1). Launch with `-coveSmoke <mode>`:
+/// Debug-only headless engine check. Launch with `-coveSmoke <mode>`:
 ///   `fetch`   — resolve the latest restore image from Apple (no download).
-///   `install` — full one-click path: download → create bundle → install → boot → shut down.
+///   `install` — full one-click path: download → create bundle → install → boot → suspend → resume → stop.
+///   `ssh`     — remote access engine check against the first VM in the library.
 /// Prints progress to stdout and exits with status 0 on success.
 @MainActor
 enum SmokeTest {
@@ -18,6 +20,7 @@ enum SmokeTest {
             do {
                 switch mode {
                 case "fetch": try await fetch()
+                case "install": try await install()
                 case "ssh": try await ssh()
                 default: log("unknown mode \(mode)"); exit(2)
                 }
@@ -90,3 +93,4 @@ enum SmokeTest {
         log("stopped: \(item.state.label)")
     }
 }
+#endif

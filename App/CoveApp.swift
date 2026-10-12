@@ -100,8 +100,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         UNUserNotificationCenter.current().delegate = self
         InstallNotifier.requestAuthorization()
         MainActor.assumeIsolated {
-            SmokeTest.runIfRequested()
             #if DEBUG
+            SmokeTest.runIfRequested()
             DebugRender.runIfRequested()
             #endif
         }

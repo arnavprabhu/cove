@@ -26,6 +26,28 @@ enum DebugRender {
         let first = makeSampleVMs(in: sample)
         let lowDisk = DiskSpaceMonitor(available: 12_000_000_000)
         let failedDownload = sample.addFailedDownloadSample()
+        let remote = VMLibrary(rootURL: root.appending(path: "remote"))
+        let remoteID = makeSampleVMs(in: remote)
+        if let item = remote.item(id: remoteID) {
+            var config = item.config
+            config.access.enabled = true
+            config.access.passwordlessSudo = true
+            try? remote.update(item, config: config)
+        }
+        let setup = RemoteAccessProgress(enabled: true, isLive: true, needsRestart: false,
+                                         status: .init(ip: "192.168.64.6"), hostInstalled: false)
+        let connected = RemoteAccessProgress(enabled: true, isLive: true, needsRestart: false,
+                                             status: .init(ip: "192.168.64.6", sshReachable: true, guestUser: "arnav"),
+                                             hostInstalled: false)
+        var ready = connected
+        ready.hostInstalled = true
+        var restart = setup
+        restart.needsRestart = true
+        let off = RemoteAccessProgress(enabled: false, isLive: false, needsRestart: false,
+                                       status: .init(), hostInstalled: false)
+        var stopped = setup
+        stopped.isLive = false
+        stopped.status = .init()
 
         let screens: [(String, CGSize, VMLibrary, AnyView)] = [
             ("01-Welcome", CGSize(width: 1200, height: 760), empty, AnyView(WelcomeView())),
@@ -46,6 +68,24 @@ enum DebugRender {
             ("14-NewVM-lowdisk", CGSize(width: 1000, height: 680), sample, AnyView(NewVMView(diskSpace: lowDisk))),
             ("15-Install-downloadFailed", CGSize(width: 1000, height: 680), sample,
              AnyView(InstallProgressView(jobID: failedDownload.id, diskSpace: lowDisk))),
+            ("16-Remote-off", CGSize(width: 760, height: 640), sample,
+             AnyView(RemoteAccessView(vmID: first, sampleProgress: off))),
+            ("17-Remote-start", CGSize(width: 760, height: 640), remote,
+             AnyView(RemoteAccessView(vmID: remoteID, sampleProgress: stopped))),
+            ("18-Remote-restart", CGSize(width: 760, height: 640), remote,
+             AnyView(RemoteAccessView(vmID: remoteID, sampleProgress: restart))),
+            ("19-Remote-setup", CGSize(width: 760, height: 760), remote,
+             AnyView(RemoteAccessView(vmID: remoteID, sampleProgress: setup))),
+            ("20-Remote-connect", CGSize(width: 760, height: 820), remote,
+             AnyView(RemoteAccessView(vmID: remoteID, sampleProgress: connected, expandedStep: 4))),
+            ("21-Remote-host", CGSize(width: 760, height: 960), remote,
+             AnyView(RemoteAccessView(vmID: remoteID, sampleProgress: connected))),
+            ("22-Remote-ready", CGSize(width: 760, height: 900), remote,
+             AnyView(RemoteAccessView(vmID: remoteID, sampleProgress: ready))),
+            ("23-VMSettings-network", CGSize(width: 760, height: 600), remote,
+             AnyView(VMSettingsView.networkSample(vmID: remoteID))),
+            ("24-Remote-window", CGSize(width: 760, height: 640), remote,
+             AnyView(RemoteAccessView(vmID: remoteID, sampleProgress: ready))),
         ]
         for (name, size, library, view) in screens {
             for (suffix, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {

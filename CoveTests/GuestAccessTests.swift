@@ -38,6 +38,46 @@ final class GuestAccessTests: XCTestCase {
         XCTAssertEqual(GuestAccess.alias(for: "???"), "cove-vm")
     }
 
+    func testHostSSHDirectoryAcceptsHomeOrSSHFolder() {
+        let home = URL(fileURLWithPath: "/Users/example", isDirectory: true)
+        let ssh = home.appending(path: ".ssh", directoryHint: .isDirectory)
+        XCTAssertEqual(GuestAccess.sshDirectory(in: home), ssh)
+        XCTAssertEqual(GuestAccess.sshDirectory(in: ssh), ssh)
+    }
+
+    func testWalkthroughGatesStaleStatusAndRestart() {
+        let status = GuestAccessMonitor.Status(ip: "192.168.64.6", sshReachable: true, guestUser: "arnav")
+        var progress = RemoteAccessProgress(enabled: false, isLive: true, needsRestart: false,
+                                            status: status, hostInstalled: true)
+        XCTAssertFalse(progress.ready)
+        XCTAssertEqual(progress.currentStep, 1)
+        progress.enabled = true
+        progress.needsRestart = true
+        XCTAssertFalse(progress.ready)
+        XCTAssertEqual(progress.currentStep, 1)
+        progress.needsRestart = false
+        progress.isLive = false
+        XCTAssertFalse(progress.ready)
+        XCTAssertEqual(progress.currentStep, 2)
+        progress.isLive = true
+        XCTAssertTrue(progress.ready)
+        XCTAssertTrue(progress.completed.allSatisfy { $0 })
+    }
+
+    func testWalkthroughAdvancesThroughGuestAndHostSetup() {
+        var progress = RemoteAccessProgress(enabled: true, isLive: true, needsRestart: false,
+                                            status: .init(ip: "192.168.64.6"), hostInstalled: false)
+        XCTAssertEqual(progress.currentStep, 3)
+        progress.status.guestUser = "arnav"
+        XCTAssertEqual(progress.currentStep, 4)
+        progress.status.sshReachable = true
+        XCTAssertTrue(progress.ready)
+        XCTAssertEqual(progress.currentStep, 5)
+        progress.status.ip = nil
+        XCTAssertFalse(progress.ready)
+        XCTAssertEqual(progress.currentStep, 4)
+    }
+
     func testOldConfigWithoutRemoteAccessDecodes() throws {
         let json = #"{"id":"6EBD31EA-90C4-42F4-B9BC-890551278522","name":"Old","cpuCount":4,"memoryBytes":8589934592,"diskBytes":85899345920,"display":{"widthInPixels":2560,"heightInPixels":1600,"pixelsPerInch":220,"matchesHost":true},"network":{"nat":{}},"shares":[],"audioEnabled":true,"createdAt":"2026-10-12T03:36:52.267Z","notes":""}"#
         let cfg = try VMBundle.decoder.decode(VMConfig.self, from: Data(json.utf8))

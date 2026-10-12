@@ -502,7 +502,6 @@ for s in 16 32 64 128 256 512 1024; do swift scripts/make-icon.swift Resources/A
 | `Resources/` | Info.plist, entitlements, asset catalog |
 | `CoveTests/` | Unit tests |
 | `docs/` | User guides and README images |
-| `design/` | Reference mockups (`*.dc.html`) — not shipped |
 | `scripts/` | Install script and icon generator |
 
 ## Acknowledgements & license

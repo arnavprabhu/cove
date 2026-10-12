@@ -28,6 +28,30 @@ $APP -coveSmoke fetch     # resolve the latest restore image from Apple
 $APP -coveSmoke install   # download → create → install → boot → suspend → resume → stop
 ```
 
+Verified on an M5 Pro (macOS 27.0.1 host, 2026-10-11): `install` downloaded the 26.6 GB macOS 27.0.1 image,
+installed it, took the "Fresh install" APFS-clone snapshot, booted, suspended to a save file, resumed from it and stopped.
+
+### Visual QA
+
+```sh
+OUT=~/Library/Containers/app.cove.Cove/Data/tmp/render   # sandboxed app can only write inside its container
+$APP -coveRender $OUT    # Debug builds: renders each screen with sample data, dark + light, to PNGs
+```
+
+## Keyboard
+
+| Action | Shortcut |
+|---|---|
+| New Virtual Machine… / Import… | ⌘N / ⇧⌘O |
+| Show Library | ⌘0 |
+| Start / Resume · Restart | ⌘R · ⌥⌘R |
+| Pause · Suspend · Shut Down | ⌥⌘P · ⌥⌘U · ⌥⌘. |
+| Take Snapshot… · Show Snapshots | ⇧⌘S · ⌥⌘S |
+| VM Settings… · Show in Finder | ⌘I · ⇧⌘R |
+| Release keyboard from the VM | ⌃⌥ (or ⌃⌥⌘, App Settings) |
+
+While a running VM has keyboard focus, ⌘-shortcuts go to the guest; press ⌃⌥ to give the keyboard back to Cove.
+
 ## Layout
 
 | Folder | Contents |
@@ -63,3 +87,10 @@ Default library: `~/Library/Containers/app.cove.Cove/Data/Library/Application Su
 - **Intel Macs**: the binary is arm64-only; the "Unsupported Mac" screen is shown at runtime when
   virtualization is unavailable (e.g. inside a VM). A universal build that shows the screen on Intel is a follow-up.
 - Name / bundle ID (`app.cove.Cove`) and App Store vs Developer ID remain open.
+
+## Known gaps
+
+- Live-UI verification of the console (thumbnail capture from the VM view's IOSurface, guest key routing)
+  still needs a manual pass with a running VM — the engine path itself is verified by the smoke test.
+- Updates pane has no updater yet (Sparkle or similar).
+- Guest CPU/memory usage isn't exposed by Virtualization.framework; status bars show allocated resources.

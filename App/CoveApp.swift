@@ -75,7 +75,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     func applicationDidFinishLaunching(_ notification: Notification) {
         UNUserNotificationCenter.current().delegate = self
         InstallNotifier.requestAuthorization()
-        MainActor.assumeIsolated { SmokeTest.runIfRequested() }
+        MainActor.assumeIsolated {
+            SmokeTest.runIfRequested()
+            #if DEBUG
+            DebugRender.runIfRequested()
+            #endif
+        }
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {

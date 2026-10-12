@@ -157,7 +157,7 @@ struct VMDetailView: View {
                     HStack {
                         Text("Disk").foregroundStyle(Theme.textSecondary)
                         Spacer()
-                        Text("\(Bytes.format(item.bundle.diskAllocated)) of \(Bytes.format(item.bundle.diskCapacity))")
+                        Text("\(Bytes.formatDisk(item.bundle.diskAllocated)) of \(Bytes.formatDisk(item.bundle.diskCapacity))")
                     }
                     .font(Theme.Font.body)
                     UsageBar(fraction: diskFraction)

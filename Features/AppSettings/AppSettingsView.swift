@@ -198,7 +198,7 @@ struct AppSettingsView: View {
                 HStack(spacing: 16) {
                     previewStat("Processors", "\(recommended.cpu) cores")
                     previewStat("Memory", Bytes.formatMemory(recommended.memory))
-                    previewStat("Disk", Bytes.format(recommended.disk))
+                    previewStat("Disk", Bytes.formatDisk(recommended.disk))
                 }
             }
             .padding(.horizontal, 14)

@@ -205,7 +205,7 @@ struct VMWindow: View {
         HStack(spacing: 18) {
             Label("CPU \(item.config.cpuCount) cores", systemImage: "cpu")
             Label("Memory \(Bytes.formatMemory(item.config.memoryBytes))", systemImage: "memorychip")
-            Label("Disk \(Bytes.format(item.bundle.diskAllocated)) / \(Bytes.format(item.bundle.diskCapacity))", systemImage: "internaldrive")
+            Label("Disk \(Bytes.formatDisk(item.bundle.diskAllocated)) / \(Bytes.formatDisk(item.bundle.diskCapacity))", systemImage: "internaldrive")
             Label(item.config.network.label, systemImage: "network")
             Spacer(minLength: 0)
             Label("\(item.config.shares.filter(\.enabled).count) shared folders", systemImage: "folder")

@@ -43,8 +43,8 @@ enum HostInfo {
         return UInt64(max(0, v?.volumeAvailableCapacityForImportantUsage ?? 0))
     }
 
-    /// Rough space a fresh install needs: restore image (~18 GB) + installed system (~25 GB).
-    static let estimatedInstallFootprint: UInt64 = Bytes.gb(45)
+    /// Rough space a fresh install needs: restore image (~27 GB for macOS 27) + installed system (~25 GB).
+    static let estimatedInstallFootprint: UInt64 = Bytes.gb(55)
 
     static func planner(freeDiskAt url: URL) -> ResourcePlanner {
         ResourcePlanner(

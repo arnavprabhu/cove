@@ -329,7 +329,7 @@ struct VMSettingsView: View {
                 HStack {
                     Text("Macintosh HD").fontWeight(.semibold)
                     Spacer()
-                    Text("\(Bytes.format(used)) used of \(Bytes.format(capacity))")
+                    Text("\(Bytes.formatDisk(used)) used of \(Bytes.formatDisk(capacity))")
                         .foregroundStyle(Theme.textSecondary)
                 }
                 UsageBar(fraction: capacity == 0 ? 0 : Double(used) / Double(capacity))

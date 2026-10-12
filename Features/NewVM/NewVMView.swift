@@ -101,7 +101,7 @@ struct NewVMView: View {
         HStack(alignment: .top, spacing: 24) {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Which macOS do you want?").font(Theme.Font.title).padding(.bottom, 4)
-                sourceCard(.latest, title: "Latest from Apple", subtitle: "Cove asks Apple for the newest macOS this Mac can run and downloads the signed restore image. Nothing to find or pick.", trailing: "≈ 18 GB download", recommended: true)
+                sourceCard(.latest, title: "Latest from Apple", subtitle: "Cove asks Apple for the newest macOS this Mac can run and downloads the signed restore image. Nothing to find or pick.", trailing: "≈ 25 GB download", recommended: true)
                 versionCard
                 fileCard
             }

@@ -52,6 +52,7 @@ struct CoveApp: App {
 /// Main window: Unsupported Mac → Welcome (empty library) → Library.
 struct RootView: View {
     @Environment(VMLibrary.self) private var library
+    @State private var showNewVM = false
 
     var body: some View {
         Group {
@@ -65,6 +66,8 @@ struct RootView: View {
         }
         .frame(minWidth: 900, minHeight: 600)
         .modifier(AppRouterModifier())
+        .sheet(isPresented: $showNewVM) { NewVMView(onDismiss: { showNewVM = false }) }
+        .onReceive(NotificationCenter.default.publisher(for: .coveNewVM)) { _ in showNewVM = true }
     }
 }
 

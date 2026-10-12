@@ -272,6 +272,7 @@ final class VMLibrary {
     @discardableResult
     func beginInstall(_ request: VMInstallJob.Request) -> VMInstallJob {
         let job = VMInstallJob(request: request, library: self)
+        job.onReadyToBoot = { AppRouter.shared.openConsole($0.id) }
         installJobs.append(job)
         job.run()
         return job

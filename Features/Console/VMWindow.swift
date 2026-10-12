@@ -118,6 +118,11 @@ struct VMWindow: View {
 
         // VM tools, separated from power controls like the mockup.
         ToolbarItemGroup(placement: .primaryAction) {
+            Button { openWindow(id: WindowID.remoteAccess, value: vmID) } label: {
+                Label("SSH", systemImage: "terminal")
+            }
+            .help("SSH & Agent Access")
+
             Button {
                 snapshotName = defaultSnapshotName
                 showSnapshotPrompt = true

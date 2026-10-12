@@ -26,6 +26,11 @@ struct CoveApp: App {
         }
         .defaultSize(width: 1200, height: 760)
 
+        WindowGroup("SSH & Agent Access", id: WindowID.remoteAccess, for: UUID.self) { $vmID in
+            if let vmID { RemoteAccessView(vmID: vmID).environment(library) }
+        }
+        .defaultSize(width: 760, height: 640)
+
         WindowGroup("Settings", id: WindowID.vmSettings, for: UUID.self) { $vmID in
             if let vmID { VMSettingsView(vmID: vmID).environment(library) }
         }

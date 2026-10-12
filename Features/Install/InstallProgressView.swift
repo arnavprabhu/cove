@@ -63,9 +63,9 @@ struct InstallProgressView: View {
             VStack(spacing: 20) {
                 ZStack(alignment: .bottom) {
                     RoundedRectangle(cornerRadius: 18).fill(Color(hex: 0x141415))
-                    Rectangle().fill(Theme.accent.opacity(0.22)).frame(height: 190 * min(1, max(0, job.stageProgress)))
+                    Rectangle().fill(Theme.accent.opacity(0.22)).frame(height: 190 * min(1, max(0, job.overallProgress)))
                     VStack(spacing: 5) {
-                        Text("\(Int((job.stageProgress * 100).rounded()))%")
+                        Text("\(Int((job.overallProgress * 100).rounded()))%")
                             .font(.system(size: 50, weight: .bold, design: .rounded)).monospacedDigit()
                         Text(stageShort(job)).font(Theme.Font.body).foregroundStyle(Theme.textSecondary)
                     }
@@ -75,7 +75,7 @@ struct InstallProgressView: View {
                 .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Theme.textPrimary.opacity(0.3), lineWidth: 4))
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(headline(job))
-                .accessibilityValue("\(Int((job.stageProgress * 100).rounded()))%")
+                .accessibilityValue("\(Int((job.overallProgress * 100).rounded()))%")
                 Capsule().fill(Theme.textPrimary.opacity(0.75)).frame(width: 65, height: 5)
                     .padding(.top, -12)
                     .accessibilityHidden(true)
@@ -186,7 +186,10 @@ struct InstallProgressView: View {
             let total = job.bytesExpected > 0 ? ByteCountFormatter.string(fromByteCount: job.bytesExpected, countStyle: .file) : "—"
             return "\(got) of \(total) · \(Durations.remaining(job.estimatedSecondsRemaining) ?? "calculating time remaining")"
         case .install:
-            return "Writing macOS to the virtual disk" + (Durations.remaining(job.estimatedSecondsRemaining).map { " · \($0)" } ?? "")
+            // Apple's installer reports nothing for a while as it prepares; say so rather than show a frozen 0%.
+            if job.stageProgress < 0.005 { return "Preparing the installer — this can take a minute" }
+            return "Writing macOS to the virtual disk · \(Int((job.stageProgress * 100).rounded()))%"
+                + (Durations.remaining(job.estimatedSecondsRemaining).map { " · \($0)" } ?? "")
         case .firstBoot: return "Booting into Setup Assistant"
         case .done: return "macOS installed. Open it to finish Setup Assistant."
         }

@@ -302,6 +302,14 @@ final class VMLibrary {
         return job
     }
 
+    #if DEBUG
+    func addFailedDownloadSample() -> VMInstallJob {
+        let job = VMInstallJob.failedDownloadSample(in: self)
+        installJobs.append(job)
+        return job
+    }
+    #endif
+
     func installJob(id: UUID) -> VMInstallJob? { installJobs.first { $0.id == id } }
 
     func removeInstallJob(_ job: VMInstallJob) { installJobs.removeAll { $0 === job } }

@@ -98,6 +98,20 @@ final class VMInstallJob: Identifiable {
         }
     }
 
+    #if DEBUG
+    /// A failed download with no network or VM work, for the PNG render harness.
+    static func failedDownloadSample(in library: VMLibrary) -> VMInstallJob {
+        let job = VMInstallJob(request: Request(name: "Clean Sonoma", cpuCount: 4, memoryBytes: Bytes.gb(8),
+                                               diskBytes: Bytes.gb(80)), library: library)
+        job.stage = .download
+        job.stageProgress = 0.62
+        job.bytesExpected = 27_000_000_000
+        job.bytesReceived = 16_740_000_000
+        job.status = .failed("The connection to Apple was lost.", resumable: true)
+        return job
+    }
+    #endif
+
     // MARK: Pipeline
 
     private func execute() async {

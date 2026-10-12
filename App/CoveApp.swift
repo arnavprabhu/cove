@@ -70,12 +70,7 @@ struct RootView: View {
         .modifier(AppRouterModifier())
         .sheet(isPresented: $showNewVM) { NewVMView(onDismiss: { showNewVM = false }) }
         .coveAlert($alert)
-        .task(id: library.rootURL) { await diskSpace.poll(at: library.rootURL) }
-        .onChange(of: diskSpace.criticalRevision) { _, _ in
-            if !library.liveItems.isEmpty, let available = diskSpace.available {
-                alert = .lowDiskSpace(available: available)
-            }
-        }
+        .onAppear { diskSpace.startPolling(at: { library.rootURL }) }
         .onReceive(NotificationCenter.default.publisher(for: .coveNewVM)) { _ in showNewVM = true }
     }
 }

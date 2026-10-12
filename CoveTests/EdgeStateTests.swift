@@ -17,12 +17,15 @@ final class EdgeStateTests: XCTestCase {
         XCTAssertEqual(monitor.level, .normal)
         monitor.update(available: Bytes.gb(4))
         XCTAssertEqual(monitor.criticalRevision, 1)
+        XCTAssertEqual(monitor.takeCriticalWarning(), Bytes.gb(4))
+        XCTAssertNil(monitor.takeCriticalWarning())
         monitor.update(available: Bytes.gb(3))
         XCTAssertEqual(monitor.criticalRevision, 1)
         monitor.update(available: Bytes.gb(5))
         XCTAssertEqual(monitor.level, .warning)
         monitor.update(available: Bytes.gb(4))
         XCTAssertEqual(monitor.criticalRevision, 2)
+        XCTAssertEqual(monitor.takeCriticalWarning(), Bytes.gb(4))
     }
 
     @MainActor
@@ -32,6 +35,24 @@ final class EdgeStateTests: XCTestCase {
         XCTAssertEqual(CoveAlert.from(CoveError.licenseLimit, starting: item), .licenseLimit(startingVMID: item.id))
         XCTAssertEqual(CoveAlert.from(CoveError.licenseLimit), .licenseLimit(startingVMID: nil))
         XCTAssertEqual(CoveAlert.from(CoveError.notEnoughDiskSpace(needed: Bytes.gb(5), available: 42)), .lowDiskSpace(available: 42))
+    }
+
+    @MainActor
+    func testFailedDownloadCanRetryUsingAFileWithoutChangingVMSettings() {
+        let root = FileManager.default.temporaryDirectory.appending(path: "cove-retry-test-\(UUID())")
+        let library = VMLibrary(rootURL: root)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let job = library.addFailedDownloadSample()
+        let original = job.request
+        let file = root.appending(path: "local.ipsw")
+        job.retry(using: file)
+        XCTAssertEqual(job.status, .running)
+        XCTAssertEqual(job.request.source, .file(file))
+        XCTAssertEqual(job.request.name, original.name)
+        XCTAssertEqual(job.request.cpuCount, original.cpuCount)
+        XCTAssertEqual(job.request.memoryBytes, original.memoryBytes)
+        XCTAssertEqual(job.request.diskBytes, original.diskBytes)
+        job.cancel()
     }
 
     func testDeleteCopyIncludesAllocatedBytesAndSnapshotCount() {

@@ -41,10 +41,16 @@ extension View {
 private struct CoveAlertModifier: ViewModifier {
     @Binding var alert: CoveAlert?
     @State private var pendingAlert: CoveAlert?
+    @State private var diskSpace = DiskSpaceMonitor.shared
     @Environment(VMLibrary.self) private var library
 
     func body(content: Content) -> some View {
-        content.alert(alert?.title ?? "", isPresented: Binding(get: { alert != nil && !isLicenseLimit }, set: { if !$0 && !isLicenseLimit { alert = nil } }),
+        content
+        .onChange(of: diskSpace.criticalRevision, initial: true) { _, _ in
+            guard alert == nil, let available = diskSpace.takeCriticalWarning() else { return }
+            if !library.liveItems.isEmpty { alert = .lowDiskSpace(available: available) }
+        }
+        .alert(alert?.title ?? "", isPresented: Binding(get: { alert != nil && !isLicenseLimit }, set: { if !$0 && !isLicenseLimit { alert = nil } }),
                       presenting: alert) { a in
             switch a {
             case .licenseLimit:

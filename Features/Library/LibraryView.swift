@@ -12,11 +12,10 @@ struct LibraryView: View {
             LibrarySidebar(selection: $selection, alert: $alert, searchText: searchText)
                 .navigationSplitViewColumnWidth(min: 220, ideal: 248, max: 320)
         } detail: {
-            VStack(spacing: 0) {
+            detail.safeAreaInset(edge: .top, spacing: 0) {
                 if diskSpace.level != .normal, let available = diskSpace.available {
                     LowDiskSpaceBanner(available: available).padding(16)
                 }
-                detail
             }
         }
         .navigationSplitViewStyle(.balanced)

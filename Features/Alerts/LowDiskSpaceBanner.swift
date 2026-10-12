@@ -14,7 +14,7 @@ struct LowDiskSpaceBanner: View {
             Text("Only \(Bytes.format(available)) free on your library disk. Cove needs about \(Bytes.format(HostInfo.estimatedInstallFootprint)) to download and install macOS.")
                 .font(Theme.Font.small)
                 .foregroundStyle(Theme.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+                .layoutPriority(1)
 
             Spacer(minLength: 0)
         }

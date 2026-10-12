@@ -13,6 +13,8 @@ final class DiskSpaceMonitor {
     private(set) var available: UInt64?
     /// Changes only when entering critical space, so the app warns once per crossing.
     private(set) var criticalRevision = 0
+    private var acknowledgedCriticalRevision = 0
+    @ObservationIgnored private var pollingTask: Task<Void, Never>?
 
     init(available: UInt64? = nil) { self.available = available }
 
@@ -33,13 +35,28 @@ final class DiskSpaceMonitor {
         if !wasCritical && level == .critical { criticalRevision += 1 }
     }
 
-    /// The view's task cancels polling on disappearance or a library-volume change.
-    func poll(at url: URL) async {
-        available = nil
-        while !Task.isCancelled {
-            update(available: HostInfo.freeDiskSpace(at: url))
-            do { try await Task.sleep(for: .seconds(30)) }
-            catch { return }
+    /// Shared by alert presenters so only one window warns per crossing.
+    func takeCriticalWarning() -> UInt64? {
+        guard level == .critical, criticalRevision > acknowledgedCriticalRevision else { return nil }
+        acknowledgedCriticalRevision = criticalRevision
+        return available
+    }
+
+    /// Keep polling when the Library window closes; the provider follows volume moves.
+    func startPolling(at url: @escaping () -> URL) {
+        guard pollingTask == nil else { return }
+        pollingTask = Task {
+            var currentURL: URL?
+            while !Task.isCancelled {
+                let nextURL = url()
+                if nextURL != currentURL {
+                    available = nil
+                    currentURL = nextURL
+                }
+                update(available: HostInfo.freeDiskSpace(at: nextURL))
+                do { try await Task.sleep(for: .seconds(30)) }
+                catch { return }
+            }
         }
     }
 }

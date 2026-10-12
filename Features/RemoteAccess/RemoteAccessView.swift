@@ -259,7 +259,7 @@ struct RemoteAccessView: View {
         case 3:
             Text("Open Terminal in the VM and type:")
             commandBox(GuestAccess.setupCommand, large: true)
-            Label("You must type this inside the VM. macOS VMs don’t support clipboard sharing.", systemImage: "keyboard")
+            Label("Type it inside the VM, capital letters included. macOS VMs don’t support clipboard sharing. Tip: type /Volumes/My and press Tab to fill in the rest.", systemImage: "keyboard")
                 .font(Theme.Font.small).foregroundStyle(Theme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             note("Press Return, then enter your VM account password when macOS asks.")

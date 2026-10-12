@@ -121,6 +121,17 @@ text or files:
 - **The folder moved or was renamed on your Mac?** Remove it in **Settings… ▸ Sharing** and add it again.
 - **Older macOS in the VM?** Shared folders need macOS 13 or later inside the VM.
 
+## “No such file or directory” when running the setup command
+
+The path inside the VM is case-sensitive. Type it with the same capital letters:
+
+```sh
+sh "/Volumes/My Shared Files/Cove/setup.sh"
+```
+
+Tip: type `sh "/Volumes/My` and press Tab to let Terminal complete the name. If `ls "/Volumes/My Shared Files"`
+doesn't list **Cove**, turn on SSH access in Cove, then shut the VM down and start it again.
+
 ## SSH isn't reachable
 
 Work through these in order:

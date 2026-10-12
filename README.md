@@ -242,7 +242,7 @@ Library). It walks you through five steps and shows live status for each:
 
 1. **Turn on SSH access.** (Already on for **Agent sandbox** VMs.)
 2. **Start the VM and finish Setup Assistant.**
-3. **Run the setup command in the VM** — type it in the VM's Terminal:
+3. **Run the setup command in the VM** — type it in the VM's Terminal, capital letters included:
    ```sh
    sh "/Volumes/My Shared Files/Cove/setup.sh"
    ```

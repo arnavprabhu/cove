@@ -474,7 +474,7 @@ extension GuestAccess {
             """)
             steps.append("""
             Click inside the VM window so it has the keyboard. In the VM, open Terminal (⌘Space, type Terminal, \
-            Return) and **type** this exactly — copy and paste between my Mac and the VM doesn't work:
+            Return) and **type** this exactly, with the same capital letters (the path is case-sensitive) — copy and paste between my Mac and the VM doesn't work:
                 \(setupCommand)
             Press Return, enter the VM account's password when asked, and wait for “Cove: done.”. Then press \
             Control-Option (⌃⌥) to give the keyboard back to my Mac.

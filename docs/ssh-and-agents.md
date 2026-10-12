@@ -72,7 +72,9 @@ Click **Start VM** (or **Open VM Window** if it's already running). If this is a
    sh "/Volumes/My Shared Files/Cove/setup.sh"
    ```
 
-   You have to type it — copy and paste between your Mac and a macOS VM isn't available.
+   You have to type it — copy and paste between your Mac and a macOS VM isn't available. **Capital letters
+   matter**: `/volumes/my shared files/…` won't be found. Tip: type `sh "/Volumes/My` and press Tab to let Terminal
+   fill in the rest.
 3. Enter the password for your account **in the VM** when asked. (Nothing appears as you type. That's normal.)
 
 When it's done, Terminal says *Cove: done.* and the walkthrough shows **Set up for user** with your VM user name.

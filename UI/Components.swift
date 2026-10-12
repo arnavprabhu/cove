@@ -1,21 +1,19 @@
 import SwiftUI
 
-/// Rounded "grouped cell" card with hairline separators between rows (Library spec list, settings).
+/// Rounded "grouped cell" card (Library spec list, settings). Put `CardDivider()` between rows.
 struct GroupedCard<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
-        VStack(spacing: 0) {
-            Group(subviews: content) { subviews in
-                ForEach(Array(subviews.enumerated()), id: \.offset) { index, subview in
-                    if index > 0 { Divider().overlay(Theme.separator) }
-                    subview
-                }
-            }
-        }
-        .background(Theme.cell, in: RoundedRectangle(cornerRadius: Theme.cornerRadius))
-        .overlay(RoundedRectangle(cornerRadius: Theme.cornerRadius).strokeBorder(Theme.cellBorder))
+        VStack(spacing: 0) { content }
+            .background(Theme.cell, in: RoundedRectangle(cornerRadius: Theme.cornerRadius))
+            .overlay(RoundedRectangle(cornerRadius: Theme.cornerRadius).strokeBorder(Theme.cellBorder))
     }
+}
+
+/// Hairline between rows inside a `GroupedCard`.
+struct CardDivider: View {
+    var body: some View { Rectangle().fill(Theme.separator).frame(height: 1) }
 }
 
 /// Label on the left, value on the right.

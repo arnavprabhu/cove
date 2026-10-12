@@ -55,7 +55,7 @@ struct VMDetailView: View {
         }
         .background(Theme.windowBackground)
         .navigationTitle(item.name)
-        .navigationSubtitle(item.osDescription)
+        .navigationSubtitle(item.config.purpose.map { "\(item.osDescription) · \($0.shortTitle)" } ?? item.osDescription)
         .toolbar { detailToolbar }
         .alert("Take Snapshot", isPresented: $showSnapshotPrompt) {
             TextField("Name", text: $snapshotName)

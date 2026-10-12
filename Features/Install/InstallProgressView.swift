@@ -190,7 +190,7 @@ struct InstallProgressView: View {
 
     private var footer: some View {
         HStack(spacing: 10) {
-            if let job, !isFinished, !isCancelled {
+            if job != nil, !isFinished, !isCancelled {
                 Button("Cancel Installation", role: .destructive) { confirmsCancel = true }.buttonStyle(.covesecondary)
             }
             Spacer()

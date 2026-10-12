@@ -56,7 +56,7 @@ struct VMSettingsView: View {
 
     var body: some View {
         Group {
-            if let item = library.item(id: vmID), let draft {
+            if let item = library.item(id: vmID), draft != nil {
                 content(item: item, draft: draftBinding(for: item))
             } else {
                 Text("This virtual machine is no longer in the library.")

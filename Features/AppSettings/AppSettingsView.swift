@@ -38,7 +38,7 @@ struct AppSettingsView: View {
     @State private var alert: CoveAlert?
     @State private var confirmMove = false
     @State private var pendingMoveURL: URL?
-    @State private var upToDateMessage: String?
+    @State private var copiedUpgradeCommand = false
     @State private var restoreListTick = 0
 
     @AppStorage(Pref.showMenuBarExtra) private var showMenuBarExtra = true
@@ -50,7 +50,6 @@ struct AppSettingsView: View {
     @AppStorage(Pref.defaultKeepRestoreImage) private var defaultKeepRestoreImage = true
     @AppStorage(Pref.snapshotAfterInstall) private var snapshotAfterInstall = true
     @AppStorage(Pref.keepRestoreImages) private var keepRestoreImages = true
-    @AppStorage(Pref.checkForUpdates) private var checkForUpdates = true
     @AppStorage(Pref.suspendOnQuit) private var suspendOnQuit = true
 
     var body: some View {
@@ -304,32 +303,36 @@ struct AppSettingsView: View {
 
     @ViewBuilder
     private var updatesPane: some View {
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+        let info = Bundle.main.infoDictionary ?? [:]
+        let version = info["CFBundleShortVersionString"] as? String ?? "—"
+        let build = info["CFBundleVersion"] as? String ?? "—"
 
         settingsBlock("Cove") {
             HStack(alignment: .center, spacing: 12) {
                 CoveLogo(size: 52)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Version \(version)")
-                    Text(upToDateMessage ?? "Cove is up to date")
+                    Text("Version \(version) (\(build))")
+                    Text(copiedUpgradeCommand ? "Copied — paste it into Terminal" : "Update with Homebrew: \(Self.upgradeCommand)")
                         .font(Theme.Font.small)
                         .foregroundStyle(Theme.textTertiary)
+                        .textSelection(.enabled)
                 }
                 Spacer(minLength: 12)
-                Button("Check Now") {
-                    upToDateMessage = "You’re up to date"
+                Button("Copy Command") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(Self.upgradeCommand, forType: .string)
+                    copiedUpgradeCommand = true
                 }
                 .buttonStyle(.covesecondary)
-                .accessibilityLabel("Check for updates now")
+                .accessibilityLabel("Copy the Homebrew update command")
             }
             .font(Theme.Font.body)
             .padding(.horizontal, 14)
             .padding(.vertical, 11)
-
-            CardDivider()
-            toggleRow("Automatically check for updates", isOn: $checkForUpdates)
         }
     }
+
+    private static let upgradeCommand = "brew upgrade --cask cove"
 
     // MARK: - Helpers
 

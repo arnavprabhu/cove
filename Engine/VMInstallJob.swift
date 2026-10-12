@@ -174,7 +174,7 @@ final class VMInstallJob: Identifiable {
             item.installJob = nil
 
             if request.snapshotAfterInstall {
-                try? await SnapshotStore.take(item, name: "Fresh install")
+                _ = try? await SnapshotStore.take(item, name: "Fresh install")
             }
             if case .latest = request.source, !request.keepRestoreImage {
                 try? FileManager.default.removeItem(at: ipsw)

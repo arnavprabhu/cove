@@ -1,0 +1,42 @@
+# Rendered by scripts/package.sh --cask in arnavprabhu/cove. Do not edit the
+# rendered file in the tap: re-render it from the release zip instead.
+cask "cove" do
+  version "@VERSION@"
+  sha256 "@SHA256@"
+
+  url "https://github.com/arnavprabhu/cove/releases/download/v#{version}/Cove-#{version}.zip"
+  name "Cove"
+  desc "Agent-first macOS virtual machines for Apple silicon"
+  homepage "https://github.com/arnavprabhu/cove"
+
+  depends_on arch: :arm64
+  depends_on macos: :sonoma
+
+  app "Cove.app"
+
+  # Quitting suspends running VMs, so they resume on the next launch.
+  uninstall quit: "app.cove.Cove"
+
+  # The sandbox container holds the VM library (VMs, snapshots, restore images) unless it was moved in
+  # Settings > Storage. ~/.ssh is never touched: remove ~/.ssh/cove and its Include line by hand.
+  zap trash: [
+    "~/Library/Application Scripts/app.cove.Cove",
+    "~/Library/Containers/app.cove.Cove",
+    "~/Library/Preferences/app.cove.Cove.plist",
+    "~/Library/Saved Application State/app.cove.Cove.savedState",
+  ]
+
+  # Ad hoc signed, not notarized, so macOS blocks the first open.
+  caveats <<~EOS
+    Cove is not notarized by Apple, so macOS blocks the first open with
+    "Apple could not verify Cove is free of malware". To allow it, once:
+      1. Open Cove from Applications, then click Done in the warning.
+      2. Open System Settings, then Privacy & Security. Scroll down to
+         Security and click Open Anyway next to "Cove" (the button shows
+         for about an hour after the blocked open).
+      3. Confirm with your password or Touch ID, and click Open Anyway
+         again when asked.
+    On macOS 14 Sonoma you can instead Control-click Cove in Applications,
+    choose Open, then click Open.
+  EOS
+end

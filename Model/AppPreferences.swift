@@ -12,6 +12,5 @@ enum Pref {
     static let snapshotAfterInstall = "snapshotAfterInstall"
     static let libraryBookmark = "libraryBookmark"          // Data: security-scoped bookmark
     static let keepRestoreImages = "keepRestoreImages"
-    static let checkForUpdates = "checkForUpdates"
     static let suspendOnQuit = "suspendOnQuit"
 }

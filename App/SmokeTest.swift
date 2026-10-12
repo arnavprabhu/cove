@@ -18,7 +18,7 @@ enum SmokeTest {
             do {
                 switch mode {
                 case "fetch": try await fetch()
-                case "install": try await install()
+                case "ssh": try await ssh()
                 default: log("unknown mode \(mode)"); exit(2)
                 }
                 log("OK")
@@ -44,6 +44,21 @@ enum SmokeTest {
         guard let req = image.mostFeaturefulSupportedConfiguration else { throw CoveError.restoreImageUnsupported }
         log("requirements: \(req.minimumSupportedCPUCount) CPUs, \(Bytes.formatMemory(req.minimumSupportedMemorySize)), hw supported: \(req.hardwareModel.isSupported)")
         log("library: \(VMLibrary.shared.rootURL.path)")
+    }
+
+    /// Remote access engine check against the first VM: key, guest folder, IP lookup, port 22 probe.
+    private static func ssh() async throws {
+        let library = VMLibrary.shared
+        guard let item = library.items.first else { throw CoveError.io("no VMs in library") }
+        let pub = try GuestAccess.ensureKeyPair(in: library)
+        log("key: \(GuestAccess.keyURL(in: library).path)")
+        log("pub: \(pub.prefix(40))…")
+        try GuestAccess.prepareGuestFolder(for: item, library: library)
+        log("guest folder: \((try? FileManager.default.contentsOfDirectory(atPath: item.bundle.guestFolderURL.path)) ?? [])")
+        let ip = item.config.macAddress.flatMap { GuestAccess.ipAddress(forMAC: $0) }
+        log("\(item.name) mac \(item.config.macAddress ?? "-") → ip \(ip ?? "none")")
+        if let ip { log("port 22 reachable: \(await GuestAccess.isSSHReachable(ip))") }
+        log("alias: \(GuestAccess.alias(for: item.name))")
     }
 
     private static func install() async throws {

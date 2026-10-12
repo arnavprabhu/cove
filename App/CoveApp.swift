@@ -73,7 +73,10 @@ struct RootView: View {
             set: { commandErrors.alert = $0 }
         ))
         .sheet(isPresented: $showNewVM) { NewVMView(onDismiss: { showNewVM = false }) }
-        .onAppear { diskSpace.startPolling(at: { library.rootURL }) }
+        .onAppear {
+            diskSpace.startPolling(at: { library.rootURL })
+            GuestAccessMonitor.shared.start(library: library)
+        }
         // Warn once each time free space drops into the critical range while VMs are running.
         .onChange(of: diskSpace.criticalRevision) {
             guard !library.liveItems.isEmpty, let available = diskSpace.takeCriticalWarning() else { return }

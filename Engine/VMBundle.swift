@@ -15,6 +15,8 @@ struct VMBundle: Hashable {
     var saveStateURL: URL { url.appending(path: "SaveState.vzvmsave") }
     var snapshotsURL: URL { url.appending(path: "Snapshots", directoryHint: .isDirectory) }
     var thumbnailURL: URL { url.appending(path: "Thumbnail.png") }
+    /// Shared into the guest as "Cove" when remote access is on (setup script, public key, status from the guest).
+    var guestFolderURL: URL { url.appending(path: "Guest", directoryHint: .isDirectory) }
 
     var hasSaveState: Bool { FileManager.default.fileExists(atPath: saveStateURL.path) }
 

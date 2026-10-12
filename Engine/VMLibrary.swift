@@ -145,6 +145,7 @@ final class VMLibrary {
         }
         item.config.lastUsedAt = Date()
         try item.bundle.writeConfig(item.config)
+        if item.config.access.enabled { try GuestAccess.prepareGuestFolder(for: item, library: self) }
         let session = try VMSession(bundle: item.bundle, config: item.config)
         session.onStop = { [weak self, weak item] _ in
             guard let item else { return }

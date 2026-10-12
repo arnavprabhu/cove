@@ -48,7 +48,8 @@ enum ConfigurationBuilder {
         }
 
         var accessed: [URL] = []
-        if let fs = sharedFolders(config.shares, accessed: &accessed) {
+        let coveFolder = config.access.enabled ? bundle.guestFolderURL : nil
+        if let fs = sharedFolders(config.shares, coveFolder: coveFolder, accessed: &accessed) {
             c.directorySharingDevices = [fs]
         }
 
@@ -95,8 +96,11 @@ enum ConfigurationBuilder {
         return [net]
     }
 
-    private static func sharedFolders(_ shares: [SharedFolder], accessed: inout [URL]) -> VZVirtioFileSystemDeviceConfiguration? {
+    private static func sharedFolders(_ shares: [SharedFolder], coveFolder: URL?,
+                                      accessed: inout [URL]) -> VZVirtioFileSystemDeviceConfiguration? {
         var dirs: [String: VZSharedDirectory] = [:]
+        // Inside the VM bundle, so no bookmark needed. Writable so setup.sh can report back.
+        if let coveFolder { dirs[GuestAccess.shareName] = VZSharedDirectory(url: coveFolder, readOnly: false) }
         for share in shares where share.enabled {
             var stale = false
             guard let url = try? URL(resolvingBookmarkData: share.bookmark, options: .withSecurityScope,

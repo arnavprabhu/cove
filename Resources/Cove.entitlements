@@ -12,6 +12,11 @@
 	<true/>
 	<key>com.apple.security.files.bookmarks.app-scope</key>
 	<true/>
+	<!-- Read-only: the NAT DHCP lease table, to find a running VM's IP address for SSH. -->
+	<key>com.apple.security.temporary-exception.files.absolute-path.read-only</key>
+	<array>
+		<string>/private/var/db/dhcpd_leases</string>
+	</array>
 	<!-- Bridged networking: add com.apple.vm.networking once Apple grants it, and
 	     build with the COVE_BRIDGED compilation condition. -->
 </dict>

@@ -17,6 +17,13 @@ struct VMConfig: Codable, Equatable, Identifiable {
     var osVersion: String?
     var osBuild: String?
     var notes: String = ""
+    /// SSH & agent access. `nil` (older configs) means off.
+    var remoteAccess: RemoteAccessSettings?
+
+    var access: RemoteAccessSettings {
+        get { remoteAccess ?? RemoteAccessSettings() }
+        set { remoteAccess = newValue }
+    }
 
     /// Hardware-affecting fields. Changing any of these invalidates a saved machine state.
     struct HardwareFingerprint: Equatable {
@@ -27,11 +34,14 @@ struct VMConfig: Codable, Equatable, Identifiable {
         var network: NetworkMode
         var shares: [SharedFolder]
         var audioEnabled: Bool
+        /// Remote access attaches the Cove shared folder device.
+        var remoteAccessEnabled: Bool
     }
 
     var hardwareFingerprint: HardwareFingerprint {
         .init(cpuCount: cpuCount, memoryBytes: memoryBytes, diskBytes: diskBytes, display: display,
-              network: network, shares: shares, audioEnabled: audioEnabled)
+              network: network, shares: shares, audioEnabled: audioEnabled,
+              remoteAccessEnabled: access.enabled)
     }
 }
 
@@ -91,4 +101,12 @@ struct SharedFolder: Codable, Equatable, Hashable, Identifiable {
     var bookmark: Data
     var readOnly: Bool = false
     var enabled: Bool = true
+}
+
+/// SSH & agent access for a VM (see Engine/GuestAccess.swift).
+struct RemoteAccessSettings: Codable, Equatable, Hashable {
+    /// Attach the "Cove" shared folder (setup script + public key) and track the VM's SSH status.
+    var enabled = false
+    /// The setup script adds a sudoers rule so agents can run `sudo` without a password.
+    var passwordlessSudo = false
 }

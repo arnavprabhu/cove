@@ -317,7 +317,7 @@ private struct VMHostView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> HostContainer {
         let container = HostContainer()
-        let virtualMachineView = VZVirtualMachineView()
+        let virtualMachineView = GuestKeyboardView()
         virtualMachineView.virtualMachine = session.virtualMachine
         virtualMachineView.capturesSystemKeys = capturesKeys
         virtualMachineView.automaticallyReconfiguresDisplay = true
@@ -335,7 +335,7 @@ private struct VMHostView: NSViewRepresentable {
             virtualMachineView?.window?.makeFirstResponder(nil)
             capturesKeys = false
         }
-        context.coordinator.beginMonitoring(enabled: capturesKeys, shortcut: releaseShortcut)
+        context.coordinator.beginMonitoring(enabled: true, shortcut: releaseShortcut)
         return container
     }
 
@@ -351,7 +351,7 @@ private struct VMHostView: NSViewRepresentable {
         if capturesKeys, let vmView = coordinator.vmView {
             DispatchQueue.main.async { vmView.window?.makeFirstResponder(vmView) }
         }
-        coordinator.beginMonitoring(enabled: capturesKeys, shortcut: releaseShortcut)
+        coordinator.beginMonitoring(enabled: true, shortcut: releaseShortcut)
     }
 
     static func dismantleNSView(_ nsView: HostContainer, coordinator: Coordinator) {
@@ -378,7 +378,7 @@ private struct VMHostView: NSViewRepresentable {
             }
         }
         var lastState: VMState = .stopped
-        weak var vmView: VZVirtualMachineView?
+        weak var vmView: GuestKeyboardView?
         var release: (() -> Void)?
         private var monitor: Any?
         private var shortcut = "ctrl-option"
@@ -394,7 +394,11 @@ private struct VMHostView: NSViewRepresentable {
                 guard let self else { return event }
                 let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
                 let required: NSEvent.ModifierFlags = self.shortcut == "ctrl-option-cmd" ? [.control, .option, .command] : [.control, .option]
-                if flags.isSuperset(of: required) { self.release?() }
+                // Release only when the guest actually has the keyboard.
+                if flags.isSuperset(of: required), let vmView = self.vmView,
+                   vmView.window?.firstResponder === vmView {
+                    self.release?()
+                }
                 return event
             }
         }
@@ -468,4 +472,17 @@ private struct WindowTitleConfigurator: NSViewRepresentable {
     var subtitle: String
     func makeNSView(context: Context) -> NSView { let view = NSView(); DispatchQueue.main.async { view.window?.subtitle = subtitle }; return view }
     func updateNSView(_ view: NSView, context: Context) { DispatchQueue.main.async { view.window?.subtitle = subtitle } }
+}
+
+/// While the guest has keyboard focus, ⌘-shortcuts belong to the guest (⌘C, ⌘N, ⇧⌘S…), not Cove's menus.
+/// AppKit offers key equivalents to the focused window's views before the main menu, so claim them here.
+/// The user hands the keyboard back to the host with the release shortcut (⌃⌥), which resigns first responder.
+final class GuestKeyboardView: VZVirtualMachineView {
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        guard window?.firstResponder === self, virtualMachine?.state == .running else {
+            return super.performKeyEquivalent(with: event)
+        }
+        keyDown(with: event)
+        return true
+    }
 }

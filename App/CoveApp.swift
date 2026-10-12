@@ -53,6 +53,7 @@ struct CoveApp: App {
 struct RootView: View {
     @Environment(VMLibrary.self) private var library
     @State private var showNewVM = false
+    @State private var commandErrors = CommandErrorCenter.shared
 
     var body: some View {
         Group {
@@ -66,6 +67,10 @@ struct RootView: View {
         }
         .frame(minWidth: 900, minHeight: 600)
         .modifier(AppRouterModifier())
+        .coveAlert(Binding(
+            get: { commandErrors.alert },
+            set: { commandErrors.alert = $0 }
+        ))
         .sheet(isPresented: $showNewVM) { NewVMView(onDismiss: { showNewVM = false }) }
         .onReceive(NotificationCenter.default.publisher(for: .coveNewVM)) { _ in showNewVM = true }
     }

@@ -20,12 +20,15 @@ struct VMBundle: Hashable {
 
     // MARK: Config
 
+    /// "2026-10-12T03:36:52.267Z"
+    static let isoFractional = Date.ISO8601FormatStyle(includingFractionalSeconds: true)
+
     static let encoder: JSONEncoder = {
         let e = JSONEncoder()
         e.outputFormatting = [.prettyPrinted, .sortedKeys]
         e.dateEncodingStrategy = .custom { date, encoder in
             var c = encoder.singleValueContainer()
-            try c.encode(date.formatted(.iso8601.year().month().day().time(includingFractionalSeconds: true)))
+            try c.encode(date.formatted(Self.isoFractional))
         }
         return e
     }()
@@ -34,8 +37,11 @@ struct VMBundle: Hashable {
         let d = JSONDecoder()
         d.dateDecodingStrategy = .custom { decoder in
             let s = try decoder.singleValueContainer().decode(String.self)
-            if let date = try? Date(s, strategy: .iso8601.year().month().day().time(includingFractionalSeconds: true))
-                ?? Date(s, strategy: .iso8601) { return date }
+            // Accept full ISO 8601 (with or without fractional seconds) and the zone-less form early builds wrote.
+            if let date = (try? Date(s, strategy: Self.isoFractional)) ?? (try? Date(s, strategy: .iso8601))
+                ?? (try? Date(s, strategy: .iso8601.year().month().day().time(includingFractionalSeconds: true))) {
+                return date
+            }
             throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Bad date \(s)"))
         }
         return d

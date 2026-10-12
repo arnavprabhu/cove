@@ -55,6 +55,14 @@ final class VMConfigTests: XCTestCase {
         XCTAssertEqual(read, cfg)
     }
 
+    func testDatesAreFullISO8601AndLegacyFormParses() throws {
+        let date = Date(timeIntervalSince1970: 1_791_000_000.25)
+        let json = String(decoding: try VMBundle.encoder.encode([date]), as: UTF8.self)
+        XCTAssertTrue(json.contains("Z\""), json)
+        let legacy = try VMBundle.decoder.decode([Date].self, from: Data(#"["2026-10-12T03:36:52.267"]"#.utf8))
+        XCTAssertEqual(legacy[0].timeIntervalSince1970, 1_791_776_212.267, accuracy: 0.001)
+    }
+
     func testSparseDiskGrowsButNeverShrinks() throws {
         let dir = FileManager.default.temporaryDirectory.appending(path: "cove-disk-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)

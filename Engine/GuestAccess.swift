@@ -124,9 +124,37 @@ enum GuestAccess {
     """
 
     /// The guest user reported by setup.sh, if it has run.
+    /// The guest is untrusted: this file is written from inside the VM. Only a plain regular file holding a valid
+    /// macOS short user name is accepted — anything else could inject directives into the host's ssh config.
     static func guestUser(for item: VMItem) -> String? {
         let url = item.bundle.guestFolderURL.appending(path: "status/user")
-        return (try? String(contentsOf: url, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+        var info = stat()
+        guard lstat(url.path, &info) == 0, (info.st_mode & S_IFMT) == S_IFREG, info.st_size <= 256,
+              let raw = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+        return sanitizedUserName(raw)
+    }
+
+    /// macOS short names: start with a letter or underscore; letters, digits, `_`, `-`, `.`; at most 32 characters.
+    nonisolated static func sanitizedUserName(_ raw: String) -> String? {
+        let name = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard (1...32).contains(name.count),
+              name.range(of: #"^[A-Za-z_][A-Za-z0-9_.-]*$"#, options: .regularExpression) != nil else { return nil }
+        return name
+    }
+
+    /// Dotted IPv4 only (the NAT lease table never holds anything else).
+    nonisolated static func sanitizedIPv4(_ raw: String) -> String? {
+        let parts = raw.split(separator: ".", omittingEmptySubsequences: false)
+        guard parts.count == 4, parts.allSatisfy({ $0.count <= 3 && UInt8($0) != nil }) else { return nil }
+        return raw
+    }
+
+    /// Last line of defense for values written into ssh_config: one token, no whitespace or control characters.
+    nonisolated static func isSafeConfigToken(_ value: String) -> Bool {
+        !value.isEmpty && value.unicodeScalars.allSatisfy {
+            !CharacterSet.whitespacesAndNewlines.contains($0) && !CharacterSet.controlCharacters.contains($0)
+                && $0 != "\"" && $0 != "#"
+        }
     }
 
     // MARK: Network
@@ -155,6 +183,7 @@ enum GuestAccess {
             let hwMAC = hw.split(separator: ",", maxSplits: 1).last.map(String.init) ?? hw
             guard leaseFormMAC(hwMAC) == want else { continue }
             let lease = fields["lease"].flatMap { UInt64($0.replacingOccurrences(of: "0x", with: ""), radix: 16) } ?? 0
+            guard let ip = sanitizedIPv4(ip) else { continue }
             if best == nil || lease > best!.lease { best = (ip, lease) }
         }
         return best?.ip
@@ -277,11 +306,14 @@ enum GuestAccess {
         for item in library.items where item.config.access.enabled {
             let alias = alias(for: item.name)
             let ip = item.config.macAddress.flatMap { ipAddress(forMAC: $0) }
+            let user = guestUser(for: item) ?? sanitizedUserName(NSUserName()) ?? "user"
+            let host = ip ?? "\(alias).local"
+            guard [alias, user, host].allSatisfy(isSafeConfigToken) else { continue }
             config += """
 
             Host \(alias)
-              HostName \(ip ?? "\(alias).local")
-              User \(guestUser(for: item) ?? NSUserName())
+              HostName \(host)
+              User \(user)
               IdentityFile ~/.ssh/cove/\(keyName)
               IdentitiesOnly yes
               HostKeyAlias \(alias)

@@ -117,3 +117,33 @@ final class GuestAccessTests: XCTestCase {
         }
     }
 }
+
+final class GuestInputSanitizingTests: XCTestCase {
+    func testRejectsSSHConfigInjectionInGuestUser() {
+        XCTAssertEqual(GuestAccess.sanitizedUserName("testing\n"), "testing")
+        XCTAssertNil(GuestAccess.sanitizedUserName("arnav\n\nHost *\n  ProxyCommand /usr/bin/osascript -e 'x'"))
+        XCTAssertNil(GuestAccess.sanitizedUserName("a b"))
+        XCTAssertNil(GuestAccess.sanitizedUserName("-oProxyCommand=x"))
+        XCTAssertNil(GuestAccess.sanitizedUserName(String(repeating: "a", count: 33)))
+        XCTAssertEqual(GuestAccess.sanitizedUserName("_svc.dev-1"), "_svc.dev-1")
+    }
+
+    func testIPv4Validation() {
+        XCTAssertEqual(GuestAccess.sanitizedIPv4("192.168.64.6"), "192.168.64.6")
+        XCTAssertNil(GuestAccess.sanitizedIPv4("192.168.64.6\n  ProxyCommand x"))
+        XCTAssertNil(GuestAccess.sanitizedIPv4("192.168.64.256"))
+        XCTAssertNil(GuestAccess.sanitizedIPv4("evil.example.com"))
+    }
+
+    func testLeaseWithInjectedIPIsIgnored() {
+        let leases = "{\n\tip_address=1.2.3.4 ProxyCommand x\n\thw_address=1,aa:bb:cc:dd:ee:ff\n\tlease=0x1\n}"
+        XCTAssertNil(GuestAccess.ipAddress(forMAC: "aa:bb:cc:dd:ee:ff", leases: leases))
+    }
+
+    func testConfigTokenGuard() {
+        XCTAssertTrue(GuestAccess.isSafeConfigToken("cove-smoke-test"))
+        XCTAssertFalse(GuestAccess.isSafeConfigToken("a\nb"))
+        XCTAssertFalse(GuestAccess.isSafeConfigToken("a b"))
+        XCTAssertFalse(GuestAccess.isSafeConfigToken("a#b"))
+    }
+}

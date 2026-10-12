@@ -16,15 +16,20 @@ targets:
     type: application
     platform: macOS
     sources:
-      - path: Cove
+      - path: App
+      - path: Engine
+      - path: Model
+      - path: UI
+      - path: Features
+      - path: Resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.cove.Cove
         PRODUCT_NAME: Cove
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
-        INFOPLIST_FILE: Cove/Resources/Info.plist
-        CODE_SIGN_ENTITLEMENTS: Cove/Resources/Cove.entitlements
+        INFOPLIST_FILE: Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Resources/Cove.entitlements
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGN_STYLE: Manual
         ENABLE_HARDENED_RUNTIME: YES

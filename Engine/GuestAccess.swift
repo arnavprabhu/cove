@@ -225,16 +225,19 @@ enum GuestAccess {
         guard let dir = hostSSHFolder() else { return false }
         let ok = dir.startAccessingSecurityScopedResource()
         defer { if ok { dir.stopAccessingSecurityScopedResource() } }
-        return FileManager.default.fileExists(atPath: dir.appending(path: "cove/config").path)
+        return FileManager.default.fileExists(atPath: sshDirectory(in: dir).appending(path: "cove/config").path)
+    }
+
+    nonisolated static func sshDirectory(in pickedFolder: URL) -> URL {
+        pickedFolder.lastPathComponent == ".ssh" ? pickedFolder : pickedFolder.appending(path: ".ssh", directoryHint: .isDirectory)
     }
 
     /// The user picked their ~/.ssh folder (or home folder) in an open panel. Installs key + config + Include.
     static func installHostSSH(pickedFolder: URL, library: VMLibrary) throws {
         let ok = pickedFolder.startAccessingSecurityScopedResource()
         defer { if ok { pickedFolder.stopAccessingSecurityScopedResource() } }
-        var sshDir = pickedFolder
-        if sshDir.lastPathComponent != ".ssh" {
-            sshDir = pickedFolder.appending(path: ".ssh", directoryHint: .isDirectory)
+        let sshDir = sshDirectory(in: pickedFolder)
+        if pickedFolder.lastPathComponent != ".ssh" {
             try FileManager.default.createDirectory(at: sshDir, withIntermediateDirectories: true,
                                                     attributes: [.posixPermissions: 0o700])
         }
@@ -248,7 +251,7 @@ enum GuestAccess {
         guard let picked = hostSSHFolder() else { return }
         let ok = picked.startAccessingSecurityScopedResource()
         defer { if ok { picked.stopAccessingSecurityScopedResource() } }
-        let sshDir = picked.lastPathComponent == ".ssh" ? picked : picked.appending(path: ".ssh")
+        let sshDir = sshDirectory(in: picked)
         try? writeHostFiles(sshDir: sshDir, library: library, addInclude: false)
     }
 
@@ -335,18 +338,20 @@ final class GuestAccessMonitor {
     }
 
     private func poll(library: VMLibrary) async {
-        var ipChanged = false
+        var configChanged = false
         for item in library.items where item.config.access.enabled {
             var s = statuses[item.id] ?? Status()
             let ip = item.state.isLive ? item.config.macAddress.flatMap { GuestAccess.ipAddress(forMAC: $0) } : nil
-            if ip != s.ip, ip != nil { ipChanged = true }
+            if ip != s.ip, ip != nil { configChanged = true }
             s.ip = ip
-            s.guestUser = GuestAccess.guestUser(for: item)
+            let user = GuestAccess.guestUser(for: item)
+            if user != s.guestUser { configChanged = true }
+            s.guestUser = user
             s.sshReachable = if let ip { await GuestAccess.isSSHReachable(ip) } else { false }
             s.lastChecked = Date()
             if statuses[item.id] != s { statuses[item.id] = s }
         }
-        if ipChanged { GuestAccess.refreshHostConfig(library: library) }
+        if configChanged { GuestAccess.refreshHostConfig(library: library) }
     }
 }
 

@@ -176,15 +176,23 @@ More help: [Troubleshooting](troubleshooting.md#ssh-isnt-reachable).
 
 - **Key.** One `ed25519` key pair per Cove library, created with `ssh-keygen` and stored in
   `<Library>/SSH/cove_ed25519`. Only the public key is put in the VM.
-- **Guest folder.** With SSH access on, the VM gets a virtio-fs share named `Cove` (the bundle's `Guest/`
-  folder), automounted at `/Volumes/My Shared Files/Cove`. It contains `setup.sh`, `cove_ed25519.pub`,
-  `README.txt` and a `status/` folder the script writes back to (`status/user`, `status/configured`). The guest
-  runs the script with `sh` because a sandboxed app can't clear quarantine on files it writes.
+- **Guest folders.** With SSH access on, the VM gets two virtio-fs shares, automounted under
+  `/Volumes/My Shared Files/`:
+  - `Cove` (the bundle's `Guest/` folder) — **read-only** in the VM: `setup.sh`, `cove_ed25519.pub`, `README.txt`.
+    The guest can't change the script or the key it installs.
+  - `Cove Status` (the bundle's `GuestStatus/` folder) — the only place the guest can write. `setup.sh` reports
+    the user name (`user`) and setup time (`configured`) there.
+
+  The guest runs the script with `sh` because a sandboxed app can't clear quarantine on files it writes.
+- **The VM is untrusted.** Everything Cove reads from it is validated before use: the user name must be a plain
+  macOS short name (no spaces, line breaks or symbols), the status file must be a small regular file (not a link),
+  and every value written into `~/.ssh/cove/config` is a single safe token. Share folders are never symlinks, and
+  imported `.cove` bundles containing links are refused.
 - **setup.sh** enables `sshd` through `launchctl` (and `systemsetup -setremotelogin on` when allowed), appends
   the key to `~/.ssh/authorized_keys`, writes or removes `/etc/sudoers.d/cove`, and sets `LocalHostName` to the
   alias.
 - **IP address.** Each VM has a fixed, locally administered MAC address. Cove reads macOS's NAT DHCP lease table,
-  `/var/db/dhcpd_leases` (a read-only sandbox exception), to find the VM's current `192.168.64.x` address.
+  `/private/var/db/dhcpd_leases` (a read-only sandbox exception), to find the VM's current `192.168.64.x` address.
 - **Reachability.** A TCP probe of port 22 every 4 seconds while the VM runs.
 - **Host config.** After you grant access to `~/.ssh` (a security-scoped bookmark), Cove writes
   `~/.ssh/cove/config` with one block per VM:

@@ -1,12 +1,23 @@
 import Foundation
 
 enum FileClone {
-    /// APFS copy-on-write clone; falls back to a regular copy on other file systems.
+    /// APFS copy-on-write clone (regular copy on other file systems), replacing `dst` atomically.
+    /// The copy is made beside `dst` first and renamed over it, so a failure (e.g. a full disk) never
+    /// leaves `dst` missing or half-written.
     static func clone(_ src: URL, to dst: URL) throws {
         let fm = FileManager.default
-        if fm.fileExists(atPath: dst.path) { try fm.removeItem(at: dst) }
-        if clonefile(src.path, dst.path, 0) != 0 {
-            try fm.copyItem(at: src, to: dst)
+        let tmp = dst.deletingLastPathComponent()
+            .appending(path: ".\(dst.lastPathComponent).cove-tmp-\(UUID().uuidString)")
+        do {
+            if clonefile(src.path, tmp.path, UInt32(CLONE_NOFOLLOW)) != 0 {
+                try fm.copyItem(at: src, to: tmp)
+            }
+            guard rename(tmp.path, dst.path) == 0 else {
+                throw CoveError.io("Couldn’t replace \(dst.lastPathComponent): \(String(cString: strerror(errno)))")
+            }
+        } catch {
+            try? fm.removeItem(at: tmp)
+            throw error
         }
     }
 

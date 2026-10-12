@@ -14,6 +14,9 @@ final class VMSession: NSObject {
     let cpuCount: Int
     let memoryBytes: UInt64
     let displayDescription: String
+    /// The configuration this VM is actually running with, display resolved to real pixels — what a saved state
+    /// taken now must be resumed with.
+    let runningConfig: VMConfig
 
     /// Called once when the guest has fully stopped (shut down, crashed, or suspended to disk).
     var onStop: ((VMSession) -> Void)?
@@ -31,6 +34,12 @@ final class VMSession: NSObject {
         memoryBytes = built.configuration.memorySize
         let d = (built.configuration.graphicsDevices.first as? VZMacGraphicsDeviceConfiguration)?.displays.first
         displayDescription = d.map { "\($0.widthInPixels) × \($0.heightInPixels)" } ?? ""
+        var running = config
+        if let d {
+            running.display = DisplaySettings(widthInPixels: d.widthInPixels, heightInPixels: d.heightInPixels,
+                                              pixelsPerInch: d.pixelsPerInch, matchesHost: false)
+        }
+        runningConfig = running
         super.init()
         virtualMachine.delegate = self
         stateObservation = virtualMachine.observe(\.state, options: [.new]) { [weak self] _, _ in
@@ -49,13 +58,13 @@ final class VMSession: NSObject {
             if !recovery, bundle.hasSaveState {
                 do {
                     try await virtualMachine.restoreMachineStateFrom(url: bundle.saveStateURL)
-                    try? FileManager.default.removeItem(at: bundle.saveStateURL)
+                    bundle.removeSaveState()
                     try await virtualMachine.resume()
                     startedAt = Date()
                     return
                 } catch {
-                    // Saved state doesn't match this configuration any more: discard it and cold boot.
-                    try? FileManager.default.removeItem(at: bundle.saveStateURL)
+                    // Saved state can't be restored (e.g. made by another macOS version): discard it and cold boot.
+                    bundle.removeSaveState()
                     if virtualMachine.state != .stopped { throw error }
                 }
             }
@@ -100,8 +109,9 @@ final class VMSession: NSObject {
         if virtualMachine.state == .running { try await virtualMachine.pause() }
         do {
             try await virtualMachine.saveMachineStateTo(url: bundle.saveStateURL)
+            try bundle.writeSaveStateConfig(runningConfig)
         } catch {
-            try? FileManager.default.removeItem(at: bundle.saveStateURL)
+            bundle.removeSaveState()
             try? await virtualMachine.resume()
             throw error
         }

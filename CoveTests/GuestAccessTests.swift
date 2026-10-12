@@ -147,3 +147,21 @@ final class GuestInputSanitizingTests: XCTestCase {
         XCTAssertFalse(GuestAccess.isSafeConfigToken("a#b"))
     }
 }
+
+final class FileCloneTests: XCTestCase {
+    func testCloneReplacesAtomicallyAndKeepsDestinationOnFailure() throws {
+        let dir = FileManager.default.temporaryDirectory.appending(path: "clone-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let src = dir.appending(path: "src"), dst = dir.appending(path: "dst")
+        try Data("new".utf8).write(to: src)
+        try Data("old".utf8).write(to: dst)
+        try FileClone.clone(src, to: dst)
+        XCTAssertEqual(try String(contentsOf: dst, encoding: .utf8), "new")
+
+        // A missing source must fail without touching the existing destination or leaving temp files.
+        XCTAssertThrowsError(try FileClone.clone(dir.appending(path: "missing"), to: dst))
+        XCTAssertEqual(try String(contentsOf: dst, encoding: .utf8), "new")
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: dir.path).sorted(), ["dst", "src"])
+    }
+}

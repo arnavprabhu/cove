@@ -13,12 +13,28 @@ struct VMBundle: Hashable {
     var auxiliaryStorageURL: URL { url.appending(path: "AuxiliaryStorage") }
     var diskURL: URL { url.appending(path: "Disk.img") }
     var saveStateURL: URL { url.appending(path: "SaveState.vzvmsave") }
+    /// The exact hardware the saved state was taken with. Resuming must use it, even if settings changed since.
+    var saveStateConfigURL: URL { url.appending(path: "SaveState.config.json") }
     var snapshotsURL: URL { url.appending(path: "Snapshots", directoryHint: .isDirectory) }
     var thumbnailURL: URL { url.appending(path: "Thumbnail.png") }
     /// Shared into the guest as "Cove" when remote access is on (setup script, public key, status from the guest).
     var guestFolderURL: URL { url.appending(path: "Guest", directoryHint: .isDirectory) }
 
     var hasSaveState: Bool { FileManager.default.fileExists(atPath: saveStateURL.path) }
+
+    /// Config to resume the saved state with (legacy saves without one resume with the current config).
+    func readSaveStateConfig() -> VMConfig? {
+        (try? Data(contentsOf: saveStateConfigURL)).flatMap { try? Self.decoder.decode(VMConfig.self, from: $0) }
+    }
+
+    func writeSaveStateConfig(_ config: VMConfig) throws {
+        try Self.encoder.encode(config).write(to: saveStateConfigURL, options: .atomic)
+    }
+
+    func removeSaveState() {
+        try? FileManager.default.removeItem(at: saveStateURL)
+        try? FileManager.default.removeItem(at: saveStateConfigURL)
+    }
 
     // MARK: Config
 
@@ -81,7 +97,7 @@ struct VMBundle: Hashable {
     /// Gives the VM a new identity (used by Clone and Advanced ▸ Regenerate). Invalidates saved state.
     func regenerateMachineIdentifier() throws {
         try VZMacMachineIdentifier().dataRepresentation.write(to: machineIdentifierURL, options: .atomic)
-        try? FileManager.default.removeItem(at: saveStateURL)
+        removeSaveState()
     }
 
     // MARK: Creation

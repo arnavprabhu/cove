@@ -25,19 +25,25 @@ enum SnapshotStore {
         try fm.createDirectory(at: d, withIntermediateDirectories: true)
         let target = VMBundle(url: d)
         do {
-            let copyFiles = {
+            let copyDisks = {
                 try FileClone.clone(bundle.diskURL, to: target.diskURL)
                 try FileClone.clone(bundle.auxiliaryStorageURL, to: target.auxiliaryStorageURL)
-                try FileClone.clone(bundle.configURL, to: target.configURL)
             }
             if let session = item.session, session.state.isLive {
-                try await session.withPausedState(saveTo: target.saveStateURL, copyFiles)
+                // Record the hardware the VM is really running with, so the memory restores later.
+                try await session.withPausedState(saveTo: target.saveStateURL) {
+                    try copyDisks()
+                    try target.writeConfig(session.runningConfig)
+                }
                 snap.includesMemory = true
             } else {
-                try copyFiles()
+                try copyDisks()
                 if bundle.hasSaveState {
                     try FileClone.clone(bundle.saveStateURL, to: target.saveStateURL)
+                    try target.writeConfig(bundle.readSaveStateConfig() ?? item.config)
                     snap.includesMemory = true
+                } else {
+                    try FileClone.clone(bundle.configURL, to: target.configURL)
                 }
             }
             try? FileClone.clone(bundle.thumbnailURL, to: target.thumbnailURL)
@@ -59,22 +65,11 @@ enum SnapshotStore {
         let src = VMBundle(url: dir(bundle, snapshot.id))
         try FileClone.clone(src.diskURL, to: bundle.diskURL)
         try FileClone.clone(src.auxiliaryStorageURL, to: bundle.auxiliaryStorageURL)
-        try? FileManager.default.removeItem(at: bundle.saveStateURL)
+        bundle.removeSaveState()
         if snapshot.includesMemory, FileManager.default.fileExists(atPath: src.saveStateURL.path) {
+            // Memory restores only with the exact hardware it was captured with — the snapshot's config.
             try FileClone.clone(src.saveStateURL, to: bundle.saveStateURL)
-            // Saved state only restores with the exact hardware it was taken with.
-            if let snapConfig = try? src.readConfig() {
-                var cfg = item.config
-                cfg.cpuCount = snapConfig.cpuCount
-                cfg.memoryBytes = snapConfig.memoryBytes
-                cfg.display = snapConfig.display
-                cfg.network = snapConfig.network
-                cfg.shares = snapConfig.shares
-                cfg.audioEnabled = snapConfig.audioEnabled
-                cfg.macAddress = snapConfig.macAddress
-                try bundle.writeConfig(cfg)
-                item.config = cfg
-            }
+            if let snapConfig = try? src.readConfig() { try bundle.writeSaveStateConfig(snapConfig) }
         }
         try? FileClone.clone(src.thumbnailURL, to: bundle.thumbnailURL)
         item.refresh()

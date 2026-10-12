@@ -149,7 +149,11 @@ final class VMLibrary {
         item.config.lastUsedAt = Date()
         try item.bundle.writeConfig(item.config)
         if item.config.access.enabled { try GuestAccess.prepareGuestFolder(for: item, library: self) }
-        let session = try VMSession(bundle: item.bundle, config: item.config)
+        // Resuming a saved state needs the hardware it was saved with; settings edited since apply next boot.
+        let resumeConfig = (!recovery && item.bundle.hasSaveState) ? item.bundle.readSaveStateConfig() : nil
+        var sessionConfig = resumeConfig ?? item.config
+        sessionConfig.name = item.config.name
+        let session = try VMSession(bundle: item.bundle, config: sessionConfig)
         session.onStop = { [weak self, weak item] _ in
             guard let item else { return }
             item.session = nil
@@ -186,12 +190,14 @@ final class VMLibrary {
 
     // MARK: Editing
 
-    /// Saves settings. Hardware changes discard any saved machine state (it would no longer restore).
+    /// Saves settings. A suspended VM keeps its saved state (it resumes with the hardware it was saved with and
+    /// picks up the new settings on its next boot) — except after a disk resize, which the saved memory can't follow.
     func update(_ item: VMItem, config newConfig: VMConfig) throws {
-        let hardwareChanged = newConfig.hardwareFingerprint != item.config.hardwareFingerprint
+        var diskResized = false
         if newConfig.diskBytes > item.bundle.diskCapacity {
             guard item.session == nil else { throw CoveError.vmIsRunning }
             try item.bundle.resizeDisk(to: newConfig.diskBytes)
+            diskResized = true
         }
         var cfg = newConfig
         if cfg.name != item.config.name {
@@ -200,9 +206,7 @@ final class VMLibrary {
         }
         try item.bundle.writeConfig(cfg)
         item.config = cfg
-        if hardwareChanged, item.session == nil, item.bundle.hasSaveState {
-            try? FileManager.default.removeItem(at: item.bundle.saveStateURL)
-        }
+        if diskResized { item.bundle.removeSaveState() }
         item.refresh()
     }
 
@@ -288,7 +292,7 @@ final class VMLibrary {
         let dest = vmsURL.appending(path: "\(sanitize(cfg.name)).\(VMBundle.pathExtension)")
         try FileManager.default.copyItem(at: url, to: dest) // clonefile-backed on APFS
         let bundle = VMBundle(url: dest)
-        try? FileManager.default.removeItem(at: bundle.saveStateURL)
+        bundle.removeSaveState()
         try bundle.writeConfig(cfg)
         let item = VMItem(bundle: bundle, config: cfg)
         items.insert(item, at: 0)

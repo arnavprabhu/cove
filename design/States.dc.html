@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cove — Menus, Alerts and Edge States</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#141416}
+a{color:#4DA3FF;text-decoration:none}a:hover{color:#7DBBFF}
+.cell{display:flex;flex-direction:column;align-items:center;gap:16px}
+.lbl{align-self:flex-start;font-size:11px;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;color:#8E8E93}
+.stage{flex:1 1 auto;width:100%;border-radius:14px;background:#1C1C1E;border:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center}
+.alert{width:280px;background:#2C2C2E;border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:20px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.at{font-size:13px;font-weight:700;line-height:17px}
+.am{font-size:11px;line-height:15px;color:#C7C7CC}
+.ab{display:flex;gap:8px;width:100%;margin-top:6px}
+.btn{flex:1 1 0;height:28px;border:0;border-radius:7px;font:inherit;font-size:13px;background:#48484A;color:#F5F5F7}
+.btn:hover{background:#545458}
+.pri{background:#0071E3;color:#FFFFFF}
+.pri:hover{background:#1A7FEA}
+.mi{display:flex;align-items:center;gap:8px;height:22px;padding:0 10px;border-radius:5px;font-size:13px;color:#F5F5F7}
+.sep{height:1px;background:rgba(255,255,255,0.10);margin:5px 10px}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; padding: 48px 56px; background: #141416; color: #F5F5F7; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif; -webkit-font-smoothing: antialiased; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 40px">
+
+  <div class="cell">
+    <div class="lbl">Sidebar context menu · notification</div>
+    <div class="stage" style="flex-direction: column; gap: 18px">
+      <div style="width: 340px; display: flex; gap: 10px; padding: 10px 12px; border-radius: 14px; background: rgba(58,58,62,0.92); border: 1px solid rgba(255,255,255,0.12)">
+        <svg width="34" height="34" viewBox="0 0 128 128" aria-hidden="true"><rect x="4" y="4" width="120" height="120" rx="28" fill="#3A3A3D"></rect><rect x="22" y="28" width="84" height="62" rx="9" fill="none" stroke="#E5E5EA" stroke-width="6"></rect><rect x="36" y="41" width="56" height="36" rx="6" fill="#0A84FF"></rect><rect x="52" y="96" width="24" height="6" rx="3" fill="#E5E5EA"></rect></svg>
+        <div style="display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto"><span style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700">“macOS VM” is ready<span style="font-weight: 400; color: #A1A1A6">now</span></span><span style="font-size: 12px; color: #D1D1D6">macOS installed. Click to open it and finish setup.</span></div>
+      </div>
+      <div role="menu" aria-label="Virtual machine actions" style="width: 230px; padding: 5px; border-radius: 9px; background: rgba(44,44,48,0.97); border: 1px solid rgba(255,255,255,0.14)">
+        <div class="mi" role="menuitem" style="background: #0058D0">Start</div>
+        <div class="mi" role="menuitem">Start in Recovery</div>
+        <div class="sep"></div>
+        <div class="mi" role="menuitem">Take Snapshot<span style="flex: 1 1 auto"></span><span style="color: #8E8E93">⇧⌘S</span></div>
+        <div class="mi" role="menuitem">Clone…</div>
+        <div class="mi" role="menuitem">Rename</div>
+        <div class="sep"></div>
+        <div class="mi" role="menuitem">Show in Finder</div>
+        <div class="mi" role="menuitem">Export…</div>
+        <div class="mi" role="menuitem">Settings…<span style="flex: 1 1 auto"></span><span style="color: #8E8E93">⌘I</span></div>
+        <div class="sep"></div>
+        <div class="mi" role="menuitem" style="color: #FF6961">Delete…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="lbl">Delete confirmation</div>
+    <div class="stage">
+      <div class="alert" role="alertdialog" aria-label="Delete Sequoia QA">
+        <svg width="56" height="56" viewBox="0 0 128 128" aria-hidden="true"><rect x="4" y="4" width="120" height="120" rx="28" fill="#3A3A3D"></rect><rect x="22" y="28" width="84" height="62" rx="9" fill="none" stroke="#E5E5EA" stroke-width="5"></rect><rect x="36" y="41" width="56" height="36" rx="6" fill="#0A84FF"></rect><rect x="52" y="96" width="24" height="5" rx="2.5" fill="#E5E5EA"></rect></svg>
+        <div class="at">Delete “Sequoia QA”?</div>
+        <div class="am">The VM's disk (24 GB) and its snapshot will be moved to the Trash. Files in shared folders on your Mac aren't affected.</div>
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #D1D1D6"><input type="checkbox" checked style="accent-color: #0A84FF; margin: 0">Also delete the snapshot (2.4 GB)</label>
+        <div class="ab"><button class="btn" type="button" style="color: #FF6961">Move to Trash</button><button class="btn pri" type="button">Cancel</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="lbl">License limit reached</div>
+    <div class="stage">
+      <div class="alert" role="alertdialog" aria-label="Can't start Clean Sonoma">
+        <span style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255,159,10,0.16); display: flex; align-items: center; justify-content: center; color: #FF9F0A"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9.5 17h-19z"></path><path d="M12 10v4.5M12 17.5v.3"></path></svg></span>
+        <div class="at">Two macOS VMs are already running</div>
+        <div class="am">Apple's macOS license allows two macOS virtual machines at a time on one Mac. Suspend one to start “Clean Sonoma”.</div>
+        <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 6px">
+          <button class="btn pri" type="button" style="flex: 0 0 28px">Suspend “Sequoia QA” and Start</button>
+          <button class="btn" type="button" style="flex: 0 0 28px">Suspend “Tahoe Dev” and Start</button>
+          <button class="btn" type="button" style="flex: 0 0 28px">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="lbl">Not enough disk space</div>
+    <div class="stage">
+      <div class="alert" role="alertdialog" aria-label="Not enough space">
+        <span style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; color: #E5E5EA"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16v5H4zM4 13h16v5H4z"></path><path d="M7 8.5h.01M7 15.5h.01"></path></svg></span>
+        <div class="at">Not enough space for a new VM</div>
+        <div class="am">Cove needs about 40 GB free to download and install macOS. Your Mac has 21 GB available.</div>
+        <div style="width: 100%; height: 6px; border-radius: 3px; background: #48484A; overflow: hidden; display: flex"><span style="width: 92%; background: #FF9F0A"></span></div>
+        <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 6px">
+          <button class="btn pri" type="button" style="flex: 0 0 28px">Use an External Disk…</button>
+          <button class="btn" type="button" style="flex: 0 0 28px">Remove Old Restore Images (37 GB)</button>
+          <button class="btn" type="button" style="flex: 0 0 28px">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="lbl">Download failed</div>
+    <div class="stage">
+      <div class="alert" role="alertdialog" aria-label="Download failed">
+        <span style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; color: #E5E5EA"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.7-8.95A6 6 0 0 1 18 9.5a4 4 0 0 1-.5 8.5"></path><path d="M12 12v6M9.5 15.5L12 18l2.5-2.5"></path><path d="M4 4l16 16"></path></svg></span>
+        <div class="at">Couldn't finish downloading macOS</div>
+        <div class="am">The connection to Apple was lost at 62%. Cove kept what was downloaded and will pick up from there.</div>
+        <div class="ab"><button class="btn" type="button">Use a File…</button><button class="btn pri" type="button">Resume Download</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="lbl">Unsupported Mac (Intel)</div>
+    <div class="stage">
+      <div class="alert" role="alertdialog" aria-label="Apple silicon required">
+        <span style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; color: #E5E5EA"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"></rect><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"></path></svg></span>
+        <div class="at">Cove needs a Mac with Apple silicon</div>
+        <div class="am">macOS virtual machines rely on Apple silicon. This Mac has an Intel processor, so Cove can't create or run macOS VMs here.</div>
+        <div class="ab"><button class="btn" type="button">Learn More</button><button class="btn pri" type="button">Quit</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

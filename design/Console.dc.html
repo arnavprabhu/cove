@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cove — Running VM</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#1E1E1E}
+a{color:#4DA3FF;text-decoration:none}a:hover{color:#7DBBFF}
+.ib{width:32px;height:28px;border-radius:7px;border:0;background:transparent;color:#C7C7CC;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+.ib:hover{background:rgba(255,255,255,0.08);color:#F5F5F7}
+.mono{font-family:'SF Mono',ui-monospace,Menlo,monospace}
+</style>
+</helmet>
+<div style="width: 1200px; height: 760px; box-sizing: border-box; display: flex; flex-direction: column; background: #1E1E1E; color: #F5F5F7; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif; -webkit-font-smoothing: antialiased; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.10)">
+
+  <div style="height: 48px; flex: 0 0 48px; display: flex; align-items: center; gap: 4px; padding: 0 12px 0 20px; background: #262628; border-bottom: 1px solid rgba(0,0,0,0.5)">
+    <div style="display: flex; gap: 8px; margin-right: 18px">
+      <span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span>
+      <span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span>
+      <span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span>
+    </div>
+    <a class="ib" href="Library.dc.html" aria-label="Back to Library"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"></rect><path d="M9 4v16"></path></svg></a>
+    <div style="display: flex; flex-direction: column; margin-left: 6px; flex: 1 1 auto">
+      <span style="font-size: 13px; font-weight: 700">Tahoe Dev</span>
+      <span style="font-size: 11px; color: #8E8E93; display: flex; align-items: center; gap: 5px"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{dot}}"></span>{{statusText}}</span>
+    </div>
+    <button class="ib" type="button" onClick="{{togglePause}}" aria-label="{{pauseLabel}}" style="{{pauseStyle}}">
+      <sc-if value="{{running}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"></rect><rect x="14" y="5" width="4" height="14" rx="1"></rect></svg></sc-if>
+      <sc-if value="{{paused}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z"></path></svg></sc-if>
+    </button>
+    <button class="ib" type="button" aria-label="Shut down"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M12 3v8"></path><path d="M6.5 6.8a8 8 0 1 0 11 0"></path></svg></button>
+    <button class="ib" type="button" aria-label="Restart"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"></path><path d="M4 3.5v5h5"></path></svg></button>
+    <span style="width: 1px; height: 20px; background: rgba(255,255,255,0.1); margin: 0 6px"></span>
+    <a class="ib" href="Snapshots.dc.html" aria-label="Take snapshot"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h2.5l1.5-2h6l1.5 2H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><circle cx="12" cy="13" r="3.5"></circle></svg></a>
+    <button class="ib" type="button" aria-label="Shared folders"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg></button>
+    <button class="ib" type="button" aria-label="Display"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"></rect><path d="M8 20h8M12 16v4"></path></svg></button>
+    <button class="ib" type="button" onClick="{{toggleCapture}}" aria-label="Capture keyboard and pointer" aria-pressed="{{captured}}" style="{{capStyle}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"></rect><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"></path></svg></button>
+    <a class="ib" href="VMSettings.dc.html" aria-label="VM settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg></a>
+    <button class="ib" type="button" aria-label="Enter full screen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"></path></svg></button>
+  </div>
+
+  <div style="flex: 1 1 auto; position: relative; overflow: hidden; background: radial-gradient(circle at 22% 28%, #4064A8 0%, transparent 42%), radial-gradient(circle at 78% 72%, #9A5677 0%, transparent 48%), radial-gradient(circle at 60% 20%, #2E7C83 0%, transparent 35%), #171D30">
+    <div style="position: absolute; left: 0; right: 0; top: 0; height: 26px; background: rgba(24,24,28,0.5); display: flex; align-items: center; gap: 18px; padding: 0 16px; font-size: 13px; color: #F5F5F7">
+      <span style="width: 12px; height: 12px; border-radius: 50%; background: #F5F5F7"></span>
+      <span style="font-weight: 700">Terminal</span><span>Shell</span><span>Edit</span><span>View</span><span>Window</span><span>Help</span>
+      <span style="flex: 1 1 auto"></span><span style="font-variant-numeric: tabular-nums">Sun 8:40 PM</span>
+    </div>
+
+    <div style="position: absolute; left: 150px; top: 90px; width: 600px; height: 340px; border-radius: 12px; background: rgba(28,28,30,0.96); border: 1px solid rgba(255,255,255,0.14); display: flex; flex-direction: column; overflow: hidden">
+      <div style="height: 30px; display: flex; align-items: center; gap: 7px; padding: 0 12px; background: #2A2A2D; position: relative">
+        <span style="width: 11px; height: 11px; border-radius: 50%; background: #FF5F57"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: #28C840"></span>
+        <span style="position: absolute; left: 0; right: 0; text-align: center; font-size: 12px; color: #A1A1A6">dev — zsh — 80×24</span>
+      </div>
+      <div class="mono" style="padding: 12px 14px; font-size: 12px; line-height: 19px; color: #E5E5EA">
+        <div><span style="color: #30D158">dev@Tahoe-Dev</span> ~ % sw_vers</div>
+        <div>ProductName:        macOS</div>
+        <div>ProductVersion:     [VERSION]</div>
+        <div>BuildVersion:       [BUILD]</div>
+        <div><span style="color: #30D158">dev@Tahoe-Dev</span> ~ % uname -m</div>
+        <div>arm64</div>
+        <div><span style="color: #30D158">dev@Tahoe-Dev</span> ~ % ls /Volumes/My\ Shared\ Files</div>
+        <div>[FOLDER NAME]</div>
+        <div><span style="color: #30D158">dev@Tahoe-Dev</span> ~ % <span style="display: inline-block; width: 8px; height: 15px; background: #E5E5EA; vertical-align: -3px"></span></div>
+      </div>
+    </div>
+
+    <div style="position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 10px; padding: 8px 10px; border-radius: 18px; background: rgba(60,60,66,0.55); border: 1px solid rgba(255,255,255,0.14)">
+      <span style="width: 44px; height: 44px; border-radius: 11px; background: #E5E5EA"></span>
+      <span style="width: 44px; height: 44px; border-radius: 11px; background: #2C2C2E; border: 1px solid #48484A"></span>
+      <span style="width: 44px; height: 44px; border-radius: 11px; background: #3E7BD9"></span>
+      <span style="width: 44px; height: 44px; border-radius: 11px; background: #8E8E93"></span>
+      <span style="width: 44px; height: 44px; border-radius: 11px; background: #D9A13E"></span>
+    </div>
+
+    <sc-if value="{{captured}}" hint-placeholder-val="{{true}}">
+      <div style="position: absolute; top: 40px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 20px; background: rgba(30,30,32,0.92); border: 1px solid rgba(255,255,255,0.14); font-size: 12px; color: #E5E5EA">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"></rect><path d="M7 14h10"></path></svg>
+        Keyboard and pointer are in the VM · press <span class="mono" style="padding: 1px 6px; border-radius: 4px; background: #3A3A3C">⌃ ⌥</span> to release
+      </div>
+    </sc-if>
+
+    <sc-if value="{{paused}}" hint-placeholder-val="{{false}}">
+      <div style="position: absolute; inset: 0; background: rgba(14,14,16,0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px">
+        <button type="button" onClick="{{togglePause}}" aria-label="Resume" style="width: 76px; height: 76px; border-radius: 50%; border: 0; background: rgba(255,255,255,0.16); color: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg></button>
+        <span style="font-size: 15px; font-weight: 600">Paused</span>
+        <span style="font-size: 12px; color: #A1A1A6">The VM is frozen in memory. Resume to continue exactly where you were.</span>
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="height: 28px; flex: 0 0 28px; display: flex; align-items: center; gap: 22px; padding: 0 16px; background: #232325; border-top: 1px solid rgba(255,255,255,0.06); font-size: 11px; color: #A1A1A6; font-variant-numeric: tabular-nums">
+    <span style="display: flex; align-items: center; gap: 6px">CPU <span style="width: 40px; height: 4px; border-radius: 2px; background: #3A3A3C; overflow: hidden; display: inline-block"><span style="display: block; height: 4px; width: {{cpuW}}; background: #0A84FF"></span></span> {{cpu}}%</span>
+    <span style="display: flex; align-items: center; gap: 6px">Memory <span style="width: 40px; height: 4px; border-radius: 2px; background: #3A3A3C; overflow: hidden; display: inline-block"><span style="display: block; height: 4px; width: 64%; background: #0A84FF"></span></span> 5.1 of 8 GB</span>
+    <span>Disk 31 GB</span>
+    <span>Network ↓ 1.2 MB/s ↑ 84 KB/s</span>
+    <span style="flex: 1 1 auto"></span>
+    <span style="display: flex; align-items: center; gap: 6px"><svg width="12" height="12" viewBox="0 0 24 24" fill="#0A84FF" aria-hidden="true"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>1 shared folder</span>
+    <span>2560 × 1600 · Retina</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1200,"height":760}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { paused: false, captured: true, cpu: 23 }; }
+  componentDidMount() {
+    this.timer = setInterval(() => {
+      if (this.state.paused) return;
+      var next = Math.max(4, Math.min(88, this.state.cpu + Math.round((Math.random() - 0.5) * 18)));
+      this.setState({ cpu: next });
+    }, 1200);
+  }
+  componentWillUnmount() { clearInterval(this.timer); }
+  renderVals() {
+    var s = this.state;
+    var on = 'background: rgba(10,132,255,0.22); color: #6CB6FF;';
+    return {
+      paused: s.paused, running: !s.paused, captured: s.captured && !s.paused,
+      dot: s.paused ? '#FF9F0A' : '#30D158',
+      statusText: s.paused ? 'Paused' : 'Running · 42 min',
+      pauseLabel: s.paused ? 'Resume' : 'Pause',
+      pauseStyle: s.paused ? on : '',
+      capStyle: s.captured ? on : '',
+      cpu: s.paused ? 0 : s.cpu, cpuW: (s.paused ? 0 : s.cpu) + '%',
+      togglePause: () => this.setState({ paused: !s.paused }),
+      toggleCapture: () => this.setState({ captured: !s.captured })
+    };
+  }
+}
+</script>
+</body>
+</html>

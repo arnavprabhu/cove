@@ -1,0 +1,59 @@
+name: Cove
+options:
+  bundleIdPrefix: app.cove
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    ARCHS: arm64
+    DEVELOPMENT_TEAM: ""
+targets:
+  Cove:
+    type: application
+    platform: macOS
+    sources:
+      - path: Cove
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.cove.Cove
+        PRODUCT_NAME: Cove
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        INFOPLIST_FILE: Cove/Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Cove/Resources/Cove.entitlements
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        ENABLE_HARDENED_RUNTIME: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        COMBINE_HIDPI_IMAGES: YES
+        # Set to YES once Apple grants com.apple.vm.networking (see Cove.entitlements).
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited)"
+  CoveTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: CoveTests
+    dependencies:
+      - target: Cove
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.cove.CoveTests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Cove.app/Contents/MacOS/Cove"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+schemes:
+  Cove:
+    build:
+      targets:
+        Cove: all
+        CoveTests: [test]
+    test:
+      targets:
+        - CoveTests

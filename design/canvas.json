@@ -1,0 +1,21 @@
+{"v":3,"createdOnFiles":{"v":1,"at":"2026-10-12T01:45:00Z"},"title":"Cove — macOS VM App","launch":{"view":"canvas"},"pages":[],
+"boards":{
+"Main.dc.html":{"x":0,"y":0,"w":1200,"h":760,"title":"1 · Welcome (first launch)","radius":12,"is_interactive":true},
+"Create.dc.html":{"x":1280,"y":0,"w":1200,"h":760,"title":"2 · New VM — one click","radius":12,"is_interactive":true},
+"Customize.dc.html":{"x":2560,"y":0,"w":1200,"h":760,"title":"3 · Customize resources","radius":12,"is_interactive":true},
+"Installing.dc.html":{"x":3840,"y":0,"w":1200,"h":760,"title":"4 · Download & install","radius":12,"is_interactive":true},
+"Library.dc.html":{"x":0,"y":1160,"w":1200,"h":760,"title":"5 · Library","radius":12,"is_interactive":true},
+"Console.dc.html":{"x":1280,"y":1160,"w":1200,"h":760,"title":"6 · Running VM","radius":12,"is_interactive":true},
+"Snapshots.dc.html":{"x":2560,"y":1160,"w":1200,"h":760,"title":"7 · Snapshots","radius":12,"is_interactive":true},
+"MenuBar.dc.html":{"x":3840,"y":1160,"w":360,"h":520,"title":"8 · Menu bar extra","radius":12,"is_interactive":true},
+"VMSettings.dc.html":{"x":0,"y":2320,"w":1200,"h":760,"title":"9 · VM settings","radius":12,"is_interactive":true},
+"AppSettings.dc.html":{"x":1280,"y":2320,"w":1200,"h":760,"title":"10 · App settings","radius":12,"is_interactive":true},
+"States.dc.html":{"x":2560,"y":2320,"w":1440,"h":900,"title":"11 · Menus, alerts & edge states","radius":12}
+},
+"order":["Main.dc.html","Create.dc.html","Customize.dc.html","Installing.dc.html","Library.dc.html","Console.dc.html","Snapshots.dc.html","MenuBar.dc.html","VMSettings.dc.html","AppSettings.dc.html","States.dc.html"],
+"notes":{
+"row1":{"x":0,"y":-300,"text":"Onboarding & one-click create","kind":"title1","maxW":5040},
+"row2":{"x":0,"y":860,"text":"Library & running a VM","kind":"title1","maxW":4200},
+"row3":{"x":0,"y":2020,"text":"Settings & edge states","kind":"title1","maxW":4000}
+},
+"designSystems":[]}

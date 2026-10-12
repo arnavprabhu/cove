@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cove — Settings</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#1E1E1E}
+a{color:#4DA3FF;text-decoration:none}a:hover{color:#7DBBFF}
+.nav{width:100%;display:flex;align-items:center;gap:10px;height:30px;padding:0 8px;border:0;border-radius:7px;font:inherit;font-size:13px;text-align:left}
+.ico{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#FFFFFF;flex:0 0 auto}
+.row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px;min-height:22px}
+.row:last-child{border-bottom:0}
+.grp{background:#262628;border:1px solid rgba(255,255,255,0.07);border-radius:12px;display:flex;flex-direction:column}
+.cap{font-size:12px;font-weight:600;color:#A1A1A6;margin:0 0 6px 4px}
+.sub{font-size:12px;color:#8E8E93}
+.sel{height:24px;border-radius:6px;border:1px solid #48484A;background:#2C2C2E;color:#F5F5F7;font:inherit;font-size:12px;padding:0 6px}
+.sb{height:24px;padding:0 10px;border-radius:6px;border:0;background:#3A3A3C;color:#F5F5F7;font:inherit;font-size:12px}
+.sb:hover{background:#48484A}
+.sw{width:38px;height:22px;border-radius:11px;border:0;padding:2px;display:flex;align-items:center;justify-content:flex-end;background:#0A84FF;flex:0 0 auto}
+.sw span{width:18px;height:18px;border-radius:50%;background:#FFFFFF;display:block}
+.swoff{justify-content:flex-start;background:#48484A}
+</style>
+</helmet>
+<div style="width: 1200px; height: 760px; box-sizing: border-box; display: flex; background: #1E1E1E; color: #F5F5F7; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif; -webkit-font-smoothing: antialiased; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.10)">
+  <nav aria-label="Settings" style="width: 240px; flex: 0 0 240px; background: #28282A; border-right: 1px solid rgba(255,255,255,0.07); padding: 0 10px; display: flex; flex-direction: column; gap: 2px">
+    <div style="height: 52px; display: flex; align-items: center; gap: 8px; padding: 0 8px">
+      <span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span>
+      <span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span>
+      <span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span>
+    </div>
+    <label style="display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 8px; border-radius: 7px; background: #1E1E20; color: #8E8E93; margin-bottom: 10px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4"></path></svg><input type="search" placeholder="Search" aria-label="Search settings" style="border: 0; background: transparent; color: #F5F5F7; font: inherit; font-size: 13px; width: 100%; outline: none"></label>
+    <sc-for list="{{nav}}" as="n" hint-placeholder-count="4">
+      <button class="nav" type="button" onClick="{{n.pick}}" style="background: {{n.bg}}; color: #F5F5F7">
+        <span class="ico" style="background: {{n.color}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.icon}}"></path></svg></span>{{n.label}}
+      </button>
+    </sc-for>
+  </nav>
+
+  <main style="flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0">
+    <div style="height: 52px; flex: 0 0 52px; display: flex; align-items: center; padding: 0 24px; border-bottom: 1px solid rgba(255,255,255,0.07); font-size: 15px; font-weight: 700">{{title}}</div>
+    <div style="flex: 1 1 auto; overflow: auto; display: flex; justify-content: center; padding: 26px 0">
+      <div style="width: 620px; display: flex; flex-direction: column; gap: 18px">
+
+        <sc-if value="{{is.general}}" hint-placeholder-val="{{true}}">
+          <div><div class="cap">Startup</div><div class="grp">
+            <div class="row"><span style="flex: 1 1 auto">Open Cove at login</span><button class="sw swoff" type="button" aria-pressed="false" aria-label="Open at login"><span></span></button></div>
+            <div class="row"><span style="flex: 1 1 auto">Show Cove in the menu bar</span><button class="sw" type="button" aria-pressed="true" aria-label="Show in menu bar"><span></span></button></div>
+            <div class="row"><span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px">Keep VMs running when Cove quits<span class="sub">Otherwise running VMs are suspended</span></span><button class="sw swoff" type="button" aria-pressed="false" aria-label="Keep VMs running"><span></span></button></div>
+          </div></div>
+          <div><div class="cap">Keyboard</div><div class="grp">
+            <div class="row"><span style="flex: 1 1 auto">Release keyboard and pointer</span><span style="font-family: 'SF Mono', ui-monospace, Menlo, monospace; font-size: 12px; padding: 2px 8px; border-radius: 5px; background: #3A3A3C">⌃ ⌥</span><button class="sb" type="button">Change…</button></div>
+            <div class="row"><span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px">Send system shortcuts to the VM<span class="sub">⌘Tab, ⌘Space and Mission Control go to the VM while it has focus</span></span><button class="sw" type="button" aria-pressed="true" aria-label="Send system shortcuts"><span></span></button></div>
+          </div></div>
+        </sc-if>
+
+        <sc-if value="{{is.defaults}}" hint-placeholder-val="{{false}}">
+          <div><div class="cap">Sizing for one-click VMs</div><div class="grp">
+            <div class="row"><span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px">Resource profile<span class="sub">How much of this Mac a new VM gets</span></span><select class="sel" aria-label="Resource profile"><option>Balanced — half the cores, a quarter of memory</option><option>Light — 2 cores, 4 GB</option><option>Performance — most cores, half of memory</option></select></div>
+            <div class="row"><span style="flex: 1 1 auto">Disk size</span><select class="sel" aria-label="Disk size"><option>80 GB</option><option>64 GB</option><option>128 GB</option><option>256 GB</option></select></div>
+            <div class="row"><span style="flex: 1 1 auto">Network</span><select class="sel" aria-label="Network"><option>Shared (NAT)</option><option>Bridged — Wi-Fi</option></select></div>
+            <div class="row"><span style="flex: 1 1 auto">Take a snapshot after installation</span><button class="sw" type="button" aria-pressed="true" aria-label="Snapshot after install"><span></span></button></div>
+          </div></div>
+        </sc-if>
+
+        <sc-if value="{{is.storage}}" hint-placeholder-val="{{false}}">
+          <div><div class="cap">Library</div><div class="grp">
+            <div class="row" style="flex-direction: column; align-items: stretch; gap: 8px">
+              <div style="display: flex; align-items: center; gap: 12px"><span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px">Cove Library<span class="sub" style="font-family: 'SF Mono', ui-monospace, Menlo, monospace">~/Library/Containers/Cove/VMs</span></span><button class="sb" type="button">Move…</button></div>
+              <div style="height: 6px; border-radius: 3px; background: #3A3A3C; overflow: hidden; display: flex"><span style="width: 22%; background: #0A84FF"></span><span style="width: 8%; background: #64D2FF"></span><span style="width: 5%; background: #BF5AF2"></span></div>
+              <div style="display: flex; gap: 16px; font-size: 11px; color: #A1A1A6"><span style="display: flex; align-items: center; gap: 5px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #0A84FF"></span>VM disks 74 GB</span><span style="display: flex; align-items: center; gap: 5px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #64D2FF"></span>Snapshots 31 GB</span><span style="display: flex; align-items: center; gap: 5px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #BF5AF2"></span>Restore images 37 GB</span></div>
+            </div>
+          </div></div>
+          <div><div class="cap">Restore images</div><div class="grp">
+            <div class="row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BF5AF2" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"></path><path d="M14 3v4h4"></path></svg><span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px">macOS 26 Tahoe<span class="sub">[BUILD] · downloaded Sep 28</span></span><span class="sub">18.4 GB</span><button class="sb" type="button">Remove</button></div>
+            <div class="row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BF5AF2" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"></path><path d="M14 3v4h4"></path></svg><span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px">macOS 15 Sequoia<span class="sub">[BUILD] · downloaded Aug 14</span></span><span class="sub">18.2 GB</span><button class="sb" type="button">Remove</button></div>
+            <div class="row"><span style="flex: 1 1 auto">Remove restore images not used in 30 days</span><button class="sw" type="button" aria-pressed="true" aria-label="Auto remove restore images"><span></span></button></div>
+          </div></div>
+        </sc-if>
+
+        <sc-if value="{{is.updates}}" hint-placeholder-val="{{false}}">
+          <div><div class="cap">Cove</div><div class="grp">
+            <div class="row"><span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px">Version [X.Y]<span class="sub">Cove is up to date</span></span><button class="sb" type="button">Check Now</button></div>
+            <div class="row"><span style="flex: 1 1 auto">Install updates automatically</span><button class="sw" type="button" aria-pressed="true" aria-label="Auto update"><span></span></button></div>
+          </div></div>
+          <div><div class="cap">macOS releases</div><div class="grp">
+            <div class="row"><span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px">Notify me when Apple releases a new macOS<span class="sub">So you can create a VM for it in one click</span></span><button class="sw" type="button" aria-pressed="true" aria-label="Notify about new macOS"><span></span></button></div>
+            <div class="row"><span style="flex: 1 1 auto">Include beta releases</span><button class="sw swoff" type="button" aria-pressed="false" aria-label="Include betas"><span></span></button></div>
+          </div></div>
+        </sc-if>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1200,"height":760}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { tab: 'storage' }; }
+  renderVals() {
+    var defs = [
+      ['general', 'General', '#8E8E93', 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM12 3v3M12 18v3M3 12h3M18 12h3'],
+      ['defaults', 'New VM Defaults', '#0A84FF', 'M12 5v14M5 12h14'],
+      ['storage', 'Storage', '#636366', 'M4 6h16v5H4zM4 13h16v5H4z'],
+      ['updates', 'Updates', '#30A14E', 'M12 4v10M8 10l4 4 4-4M5 19h14']
+    ];
+    var cur = this.state.tab, title = '';
+    var nav = defs.map((d) => {
+      if (d[0] === cur) title = d[1];
+      return { label: d[1], color: d[2], icon: d[3], bg: d[0] === cur ? '#0058D0' : 'transparent', pick: () => this.setState({ tab: d[0] }) };
+    });
+    var is = {}; defs.forEach(function (d) { is[d[0]] = d[0] === cur; });
+    return { nav: nav, is: is, title: title };
+  }
+}
+</script>
+</body>
+</html>

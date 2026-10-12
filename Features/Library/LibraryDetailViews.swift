@@ -81,6 +81,11 @@ struct VMDetailView: View {
             .opacity(0)
             .accessibilityHidden(true)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .coveTakeSnapshot)) { note in
+            guard (note.object as? UUID) == item.id else { return }
+            snapshotName = LibraryFormatting.snapshotDay(Date())
+            showSnapshotPrompt = true
+        }
     }
 
     // MARK: - Preview
@@ -122,6 +127,7 @@ struct VMDetailView: View {
                     .font(Theme.Font.body)
                     .foregroundStyle(Color(light: 0x6E6E73, dark: 0xD1D1D6))
             }
+            .accessibilityElement(children: .combine)
 
             HStack(spacing: 8) {
                 Button(LibraryFormatting.primaryActionTitle(for: item)) {
@@ -142,6 +148,8 @@ struct VMDetailView: View {
             if item.state == .installing, let job = item.installJob {
                 VStack(alignment: .leading, spacing: 8) {
                     ProgressView(value: job.overallProgress)
+                        .accessibilityLabel("Installation progress")
+                        .accessibilityValue("\(Int((job.overallProgress * 100).rounded()))%")
                     Text(job.stage.title)
                         .font(Theme.Font.caption)
                         .foregroundStyle(Theme.textTertiary)
@@ -264,14 +272,16 @@ struct VMDetailView: View {
             }
             .help(LibraryFormatting.primaryActionTitle(for: item))
             .accessibilityLabel(LibraryFormatting.primaryActionTitle(for: item))
+            .keyboardShortcut("r")
 
             Button {
                 openWindow(id: WindowID.snapshots, value: item.id)
             } label: {
                 Image(systemName: "camera")
             }
-            .help("Snapshots")
+            .help("Show Snapshots")
             .accessibilityLabel("Snapshots")
+            .keyboardShortcut("s", modifiers: [.command, .option])
 
             Button {
                 openWindow(id: WindowID.vmSettings, value: item.id)
@@ -280,6 +290,7 @@ struct VMDetailView: View {
             }
             .help("Settings")
             .accessibilityLabel("Settings")
+            .keyboardShortcut("i")
 
             Menu {
                 VMContextMenu(

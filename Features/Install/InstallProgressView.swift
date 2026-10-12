@@ -59,8 +59,12 @@ struct InstallProgressView: View {
                 }
                 .frame(width: 360, height: 230)
                 .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Theme.textPrimary.opacity(0.3), lineWidth: 4))
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(headline(job))
+                .accessibilityValue("\(Int((job.stageProgress * 100).rounded()))%")
                 Capsule().fill(Theme.textPrimary.opacity(0.75)).frame(width: 65, height: 5)
                     .padding(.top, -12)
+                    .accessibilityHidden(true)
                 VStack(spacing: 6) {
                     Text(headline(job)).font(.system(size: 23, weight: .bold)).multilineTextAlignment(.center)
                     Text(detail(job)).font(.system(size: 13)).foregroundStyle(Theme.textSecondary).multilineTextAlignment(.center)
@@ -81,12 +85,14 @@ struct InstallProgressView: View {
                 }
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "bell").padding(.top, 1)
+                        .accessibilityHidden(true)
                     Text("You can close this window. Installation keeps going and Cove sends a notification when your VM is ready.")
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .font(Theme.Font.small).foregroundStyle(Theme.textSecondary)
                 .padding(13).frame(maxWidth: .infinity, alignment: .leading)
                 .background(Theme.cell, in: RoundedRectangle(cornerRadius: 12))
+                .accessibilityElement(children: .combine)
             }
             .frame(width: 350)
         }

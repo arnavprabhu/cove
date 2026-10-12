@@ -158,6 +158,8 @@ struct LibrarySidebar: View {
         }
         .padding(10)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Cove Library, \(Bytes.format(used)) used")
     }
 
     private func defaultSnapshotName() -> String {

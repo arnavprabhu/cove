@@ -78,6 +78,12 @@ struct VMWindow: View {
             }
         }
         .frame(minWidth: 800, minHeight: 560)
+        .focusedSceneValue(\.focusedVMID, vmID)
+        .onReceive(NotificationCenter.default.publisher(for: .coveTakeSnapshot)) { note in
+            guard (note.object as? UUID) == vmID else { return }
+            snapshotName = defaultSnapshotName
+            showSnapshotPrompt = true
+        }
     }
 
     @ToolbarContentBuilder
@@ -90,16 +96,19 @@ struct VMWindow: View {
                 } label: { Image(systemName: state == .paused ? "play.fill" : "pause.fill") }
                     .help(state == .paused ? "Resume virtual machine" : "Pause virtual machine")
                     .accessibilityLabel(state == .paused ? "Resume" : "Pause")
+                    .keyboardShortcut("p", modifiers: [.command, .option])
                     .disabled(state != .paused && state != .running)
 
                 Button { showStopMenu = true } label: { Image(systemName: "power") }
                     .help("Shut down, suspend, or force stop")
                     .accessibilityLabel("Shut Down")
+                    .keyboardShortcut(".", modifiers: [.command, .option])
                     .disabled(!state.isLive)
 
                 Button { confirmRestart = true } label: { Image(systemName: "arrow.clockwise") }
                     .help("Restart virtual machine")
                     .accessibilityLabel("Restart")
+                    .keyboardShortcut("r", modifiers: [.command, .option])
                     .disabled(!state.isLive)
 
                 Divider().frame(height: 20).padding(.horizontal, 5)
@@ -110,6 +119,7 @@ struct VMWindow: View {
                 } label: { Image(systemName: "camera") }
                     .help("Take a snapshot")
                     .accessibilityLabel("Take Snapshot")
+                    .keyboardShortcut("s", modifiers: [.command, .shift])
                     .disabled(state == .starting || state == .saving || state == .stopping)
 
                 Button { showShares.toggle() } label: { Image(systemName: "folder") }
@@ -140,9 +150,10 @@ struct VMWindow: View {
                 Button { openWindow(id: WindowID.vmSettings, value: vmID) } label: { Image(systemName: "slider.horizontal.3") }
                     .help("Virtual machine settings")
                     .accessibilityLabel("VM Settings")
+                    .keyboardShortcut("i")
 
                 Button { NSApp.keyWindow?.toggleFullScreen(nil) } label: { Image(systemName: "arrow.up.left.and.arrow.down.right") }
-                    .help("Enter or exit full screen")
+                    .help("Enter or exit full screen (⌃⌘F)")
                     .accessibilityLabel("Toggle Full Screen")
             }
             .buttonStyle(.plain)
@@ -155,6 +166,7 @@ struct VMWindow: View {
         VStack(spacing: 12) {
             Image(systemName: item.state == .suspended ? "pause.circle" : "macwindow")
                 .font(.system(size: 38, weight: .light)).foregroundStyle(Theme.textSecondary)
+                .accessibilityHidden(true)
             Text(item.state == .suspended ? "Suspended" : item.state.label)
                 .font(.system(size: 16, weight: .semibold)).foregroundStyle(Theme.textPrimary)
             if let message = session?.lastError { Text(message).font(Theme.Font.small).foregroundStyle(Theme.destructive).multilineTextAlignment(.center).frame(maxWidth: 420) }
@@ -186,6 +198,7 @@ struct VMWindow: View {
     private var captureToast: some View {
         HStack(spacing: 10) {
             Image(systemName: "keyboard")
+                .accessibilityHidden(true)
             Text("Keyboard and pointer are in the VM · press")
             Text(releaseShortcut == "ctrl-option-cmd" ? "⌃ ⌥ ⌘" : "⌃ ⌥")
                 .font(Theme.Font.mono).padding(.horizontal, 6).padding(.vertical, 2)
@@ -199,6 +212,7 @@ struct VMWindow: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(.top, 18)
         .allowsHitTesting(false)
+        .accessibilityElement(children: .combine)
     }
 
     private func statusBar(_ item: VMItem) -> some View {
@@ -220,6 +234,7 @@ struct VMWindow: View {
         .background(Theme.toolbar)
         .overlay(alignment: .top) { Rectangle().fill(Theme.separator).frame(height: 1) }
         .lineLimit(1)
+        .accessibilityElement(children: .combine)
     }
 
     private func sharesPopover(_ item: VMItem) -> some View {
@@ -230,6 +245,7 @@ struct VMWindow: View {
             ForEach(item.config.shares) { share in
                 HStack {
                     Image(systemName: "folder.fill").foregroundStyle(Theme.accent)
+                        .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(share.name).font(Theme.Font.body)
                         Text(share.path).font(Theme.Font.caption).foregroundStyle(Theme.textSecondary).lineLimit(1)

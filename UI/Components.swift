@@ -43,7 +43,10 @@ extension SpecRow where Value == Text {
 struct StatusDot: View {
     var color: Color
     var size: CGFloat = 8
-    var body: some View { Circle().fill(color).frame(width: size, height: size) }
+    var body: some View {
+        Circle().fill(color).frame(width: size, height: size)
+            .accessibilityHidden(true)
+    }
 }
 
 struct SectionHeader: View {
@@ -110,6 +113,7 @@ struct VMPreview: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .overlay(RoundedRectangle(cornerRadius: cornerRadius).strokeBorder(Color.primary.opacity(0.10)))
+        .accessibilityHidden(true)
     }
 }
 
@@ -127,6 +131,9 @@ struct UsageBar: View {
             }
         }
         .frame(height: height)
+        .accessibilityElement()
+        .accessibilityLabel("Usage")
+        .accessibilityValue("\(Int((max(0, min(1, fraction)) * 100).rounded()))%")
     }
 }
 

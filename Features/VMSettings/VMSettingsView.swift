@@ -59,6 +59,7 @@ struct VMSettingsView: View {
         .onAppear { loadDraft() }
         .onChange(of: vmID) { _, _ in loadDraft() }
         .coveAlert($alert)
+        .focusedSceneValue(\.focusedVMID, vmID)
         .onChange(of: library.items.map(\.id)) { _, ids in
             if !ids.contains(vmID) { dismissWindow() }
         }

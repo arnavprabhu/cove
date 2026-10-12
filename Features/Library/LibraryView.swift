@@ -17,8 +17,14 @@ struct LibraryView: View {
         .searchable(text: $searchText, placement: .toolbar, prompt: "Search")
         .background(Theme.windowBackground)
         .coveAlert($alert)
+        .focusedSceneValue(\.focusedVMID, focusedVMID)
         .onAppear { ensureSelection() }
         .onChange(of: library.items.map(\.id)) { _, _ in ensureSelection() }
+    }
+
+    private var focusedVMID: UUID? {
+        if case .vm(let id) = selection { return id }
+        return nil
     }
 
     @ViewBuilder

@@ -53,6 +53,7 @@ struct CoveApp: App {
 struct RootView: View {
     @Environment(VMLibrary.self) private var library
     @State private var showNewVM = false
+    @State private var newVMPurpose: VMPurpose = .everyday
     @State private var commandErrors = CommandErrorCenter.shared
     @State private var diskSpace = DiskSpaceMonitor.shared
 
@@ -72,7 +73,7 @@ struct RootView: View {
             get: { commandErrors.alert },
             set: { commandErrors.alert = $0 }
         ))
-        .sheet(isPresented: $showNewVM) { NewVMView(onDismiss: { showNewVM = false }) }
+        .sheet(isPresented: $showNewVM) { NewVMView(initialPurpose: newVMPurpose, onDismiss: { showNewVM = false }) }
         .onAppear {
             diskSpace.startPolling(at: { library.rootURL })
             GuestAccessMonitor.shared.start(library: library)
@@ -82,7 +83,10 @@ struct RootView: View {
             guard !library.liveItems.isEmpty, let available = diskSpace.takeCriticalWarning() else { return }
             commandErrors.present(.lowDiskSpace(available: available))
         }
-        .onReceive(NotificationCenter.default.publisher(for: .coveNewVM)) { _ in showNewVM = true }
+        .onReceive(NotificationCenter.default.publisher(for: .coveNewVM)) { note in
+            newVMPurpose = note.object as? VMPurpose ?? .everyday
+            showNewVM = true
+        }
     }
 }
 

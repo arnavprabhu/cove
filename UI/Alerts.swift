@@ -159,8 +159,8 @@ extension CoveAlert {
 /// Opens the New Virtual Machine sheet in the main window (from any window, menu, or the menu bar extra).
 @MainActor
 enum CoveActions {
-    static func newVirtualMachine() {
+    static func newVirtualMachine(purpose: VMPurpose? = nil) {
         AppRouter.shared.open(.library)
-        NotificationCenter.default.post(name: .coveNewVM, object: nil)
+        NotificationCenter.default.post(name: .coveNewVM, object: purpose)
     }
 }

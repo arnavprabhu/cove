@@ -3,6 +3,9 @@
 Use a Cove VM as a disposable sandbox that **you** and **coding agents on your Mac** (Claude Code, Codex,
 Cursor, scripts…) can reach over SSH: `ssh cove-<vm-name> '<command>'`.
 
+Quickest start: create a VM with **Agent sandbox** as its purpose (Welcome screen or New VM ▸ *What's it for?*) —
+SSH access, passwordless sudo and a “Fresh install” snapshot are set up for you; then follow steps 2–5.
+
 In the app: select a VM ▸ **SSH & Agent Access…** (⇧⌘K, the console toolbar's SSH button, or the VM's
 context menu). The window walks through the same steps as below and shows live status for each one.
 

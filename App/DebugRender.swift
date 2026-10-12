@@ -29,7 +29,7 @@ enum DebugRender {
 
         let screens: [(String, CGSize, VMLibrary, AnyView)] = [
             ("01-Welcome", CGSize(width: 1200, height: 760), empty, AnyView(WelcomeView())),
-            ("02-NewVM", CGSize(width: 1000, height: 680), sample, AnyView(NewVMView())),
+            ("02-NewVM", CGSize(width: 1000, height: 720), sample, AnyView(NewVMView())),
             ("05-Library", CGSize(width: 1200, height: 760), sample, AnyView(LibraryView())),
             ("06-Console-stopped", CGSize(width: 1200, height: 760), sample, AnyView(VMWindow(vmID: first))),
             ("07-Snapshots", CGSize(width: 1200, height: 760), sample, AnyView(SnapshotsView(vmID: first))),

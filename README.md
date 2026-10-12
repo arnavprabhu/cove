@@ -1,7 +1,16 @@
 # Cove
 
-A native macOS app that creates and runs **macOS virtual machines on Apple silicon** with Apple's
-Virtualization.framework — one click to download, install and boot the latest macOS.
+**A spare Mac, inside your Mac.** Cove creates and runs macOS virtual machines on Apple silicon with Apple's
+Virtualization.framework — one click to download, install and boot the latest macOS — so the things you want to
+try, build or hand to an agent stay off the Mac you rely on.
+
+| Use it for | What Cove sets up |
+|---|---|
+| **Everyday & tinkering** — try apps, betas, settings and sketchy downloads | A balanced VM; snapshot first, roll back anytime |
+| **Development & testing** — clean builds, installers, other macOS versions | More disk, quick clones and snapshots for clean-slate runs |
+| **Agentic development** — a sandbox coding agents drive over SSH | SSH access, passwordless sudo and a “Fresh install” snapshot, ready for `ssh cove-<name>` |
+
+Pick the purpose when creating a VM (or from the Welcome screen); you can change any setting later.
 
 - Host: Apple silicon, macOS 14 Sonoma or later
 - Stack: Swift + SwiftUI (AppKit bridges for `VZVirtualMachineView` and the menu bar extra)

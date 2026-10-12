@@ -2,6 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct NewVMView: View {
+    var initialPurpose: VMPurpose = .everyday
     var onDismiss: () -> Void = {}
     @Environment(VMLibrary.self) private var library
     @AppStorage(Pref.defaultProfile) private var defaultProfile = ResourcePlanner.Profile.balanced.rawValue
@@ -22,6 +23,9 @@ struct NewVMView: View {
     @State private var network: NetworkMode = .nat
     @State private var shares: [SharedFolder] = []
     @State private var alert: CoveAlert?
+    @State private var purpose: VMPurpose = .everyday
+    /// Set once the user types their own name, so switching purpose doesn't overwrite it.
+    @State private var nameEdited = false
     @State var diskSpace = DiskSpaceMonitor.shared
 
     private var planner: ResourcePlanner { HostInfo.planner(freeDiskAt: library.rootURL) }
@@ -69,9 +73,10 @@ struct NewVMView: View {
             footer
         }
         .background(Theme.windowBackground)
-        .frame(minWidth: 820, minHeight: 600)
+        .frame(minWidth: 860, minHeight: 680)
         .onAppear {
-            if name.isEmpty { name = library.uniqueName("macOS") }
+            purpose = initialPurpose
+            if name.isEmpty { name = library.uniqueName(purpose.defaultName) }
             startAfterInstall = defaultStart
             keepRestoreImage = defaultKeepImage
             resetResources()
@@ -111,11 +116,13 @@ struct NewVMView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             VStack(alignment: .leading, spacing: 15) {
+                purposePicker
                 GroupedCard {
                     VStack(alignment: .leading, spacing: 14) {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Name").font(Theme.Font.small).foregroundStyle(Theme.textSecondary)
-                            TextField("Virtual machine name", text: $name).textFieldStyle(.roundedBorder)
+                            TextField("Virtual machine name", text: Binding(get: { name }, set: { name = $0; nameEdited = true }))
+                                .textFieldStyle(.roundedBorder)
                         }
                         HStack {
                             Text("Sized for your Mac").font(.system(size: 13, weight: .semibold))
@@ -128,7 +135,7 @@ struct NewVMView: View {
                             summaryCell("Disk", Bytes.formatMemory(disk))
                             summaryCell("Display", display.matchesHost ? "Retina" : display.label)
                         }
-                        Text("Half of your cores and a quarter of your memory, so your Mac stays fast. The disk only uses space as macOS fills it.")
+                        Text("Sized so your Mac stays fast. The disk only uses space as macOS fills it.")
                             .font(Theme.Font.small).foregroundStyle(Theme.textTertiary).fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(16)
@@ -140,6 +147,56 @@ struct NewVMView: View {
             }
             .frame(width: 320)
         }
+    }
+
+    private var purposePicker: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("What’s it for?").font(Theme.Font.small).foregroundStyle(Theme.textSecondary)
+            VStack(spacing: 0) {
+                ForEach(Array(VMPurpose.allCases.enumerated()), id: \.element) { index, p in
+                    if index > 0 { CardDivider() }
+                    Button { choose(p) } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: p.systemImage)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(purpose == p ? Theme.accent : Theme.textSecondary)
+                                .frame(width: 22)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(p.title).font(.system(size: 13, weight: .semibold))
+                                if purpose == p {
+                                    Text(p.summary).font(Theme.Font.caption).foregroundStyle(Theme.textTertiary)
+                                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                            Spacer(minLength: 4)
+                            Image(systemName: purpose == p ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(purpose == p ? Theme.accent : Theme.textTertiary.opacity(0.6))
+                        }
+                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .background(purpose == p ? Theme.accent.opacity(0.10) : .clear)
+                    }
+                    .buttonStyle(.coveplain)
+                    .accessibilityLabel(p.title)
+                    .accessibilityHint(p.summary)
+                    .accessibilityAddTraits(purpose == p ? .isSelected : [])
+                }
+            }
+            .background(Theme.cell, in: RoundedRectangle(cornerRadius: 12))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.cellBorder))
+            if purpose == .agentSandbox {
+                Label("SSH access and passwordless sudo are turned on. After installing, finish setup in SSH & Agent Access.",
+                      systemImage: "key")
+                    .font(Theme.Font.caption).foregroundStyle(Theme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private func choose(_ p: VMPurpose) {
+        purpose = p
+        if !nameEdited { name = library.uniqueName(p.defaultName) }
+        resetResources()
     }
 
     private func sourceCard(_ kind: SourceKind, title: String, subtitle: String, trailing: String? = nil, recommended: Bool = false) -> some View {
@@ -357,7 +414,7 @@ struct NewVMView: View {
     private func resetResources() {
         cpu = recommended.cpu
         memory = recommended.memory
-        disk = recommended.disk
+        disk = planner.clampDisk(purpose.defaultDisk)
     }
 
     private func addFolder() {
@@ -383,7 +440,9 @@ struct NewVMView: View {
         let request = VMInstallJob.Request(name: name.trimmingCharacters(in: .whitespacesAndNewlines), source: chosenSource,
                                            cpuCount: planner.clampCPU(cpu), memoryBytes: planner.clampMemory(memory), diskBytes: planner.clampDisk(disk),
                                            display: display, network: network, shares: shares, startAfterInstall: startAfterInstall,
-                                           keepRestoreImage: keepRestoreImage, snapshotAfterInstall: snapshotAfterInstall)
+                                           keepRestoreImage: keepRestoreImage,
+                                           snapshotAfterInstall: snapshotAfterInstall || purpose == .agentSandbox,
+                                           purpose: purpose, remoteAccess: purpose.defaultRemoteAccess)
         let job = library.beginInstall(request)
         AppRouter.shared.openInstall(job.id)
         onDismiss()

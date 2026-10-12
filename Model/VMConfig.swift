@@ -17,6 +17,8 @@ struct VMConfig: Codable, Equatable, Identifiable {
     var osVersion: String?
     var osBuild: String?
     var notes: String = ""
+    /// What the VM is for (chosen at creation). `nil` for VMs made before purposes existed.
+    var purpose: VMPurpose?
     /// SSH & agent access. `nil` (older configs) means off.
     var remoteAccess: RemoteAccessSettings?
 

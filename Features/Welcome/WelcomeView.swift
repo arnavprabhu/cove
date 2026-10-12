@@ -17,19 +17,25 @@ struct WelcomeView: View {
                 Text("Welcome to Cove")
                     .font(Theme.Font.largeTitle)
                     .padding(.top, 24)
-                Text("Run macOS inside macOS. Cove downloads the right restore image from Apple, sizes the virtual machine for your Mac, and installs it — in one click.")
+                Text("A spare Mac, inside your Mac. Try things, build and test, or hand coding agents a sandbox — and keep it all off the Mac you rely on. Cove sets up macOS in one click.")
                     .font(.system(size: 15))
                     .foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)
-                    .frame(maxWidth: 460)
+                    .frame(maxWidth: 500)
                     .padding(.top, 10)
-                Button(action: CoveActions.newVirtualMachine) {
+                HStack(alignment: .top, spacing: 10) {
+                    ForEach(VMPurpose.allCases) { purpose in useCaseTile(purpose) }
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 560)
+                .padding(.top, 22)
+                Button(action: { CoveActions.newVirtualMachine() }) {
                     Label("Create macOS Virtual Machine", systemImage: "plus")
                 }
                 .buttonStyle(.coveprimaryLarge)
                 .disabled(!hostReady)
                 .help(hostReady ? "Uses the latest macOS your Mac supports · about 20 minutes" : readinessExplanation)
-                .padding(.top, 30)
+                .padding(.top, 22)
                 Text(hostReady ? "Uses the latest macOS your Mac supports · about 20 minutes" : readinessExplanation)
                     .font(Theme.Font.small)
                     .foregroundStyle(hostReady ? Theme.textTertiary : Theme.warning)
@@ -39,16 +45,13 @@ struct WelcomeView: View {
 
                 VStack(spacing: 2) {
                     welcomeAction("square.and.arrow.down", title: "Import a virtual machine…", detail: "Open a .cove bundle or a VM from another app", action: importVM)
-                    welcomeAction("doc", title: "Install from a restore image…", detail: "Use an .ipsw file you already have on this Mac") {
-                        CoveActions.newVirtualMachine()
-                    }
                     welcomeAction("gearshape", title: "Choose where VMs are stored…", detail: "Internal disk or a fast external SSD") {
                         AppRouter.shared.open(.library)
                         NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
                     }
                 }
                 .frame(maxWidth: 460)
-                .padding(.top, 28)
+                .padding(.top, 18)
                 Spacer()
             }
             .frame(maxWidth: .infinity)
@@ -174,5 +177,32 @@ struct WelcomeView: View {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do { try library.importVM(from: url) }
         catch { importError = error.localizedDescription }
+    }
+}
+
+extension WelcomeView {
+    /// One of the three things people use Cove for; clicking starts a VM set up for it.
+    fileprivate func useCaseTile(_ purpose: VMPurpose) -> some View {
+        Button { CoveActions.newVirtualMachine(purpose: purpose) } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                Image(systemName: purpose.systemImage)
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(Theme.accent)
+                    .frame(height: 22)
+                Text(purpose.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.textPrimary)
+                Text(purpose.summary).font(Theme.Font.caption).foregroundStyle(Theme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(Theme.cell, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.cellBorder))
+        }
+        .buttonStyle(.coveplain)
+        .disabled(!hostReady)
+        .help("Create a VM for \(purpose.title.lowercased())")
+        .accessibilityLabel("Create a VM for \(purpose.title)")
+        .accessibilityHint(purpose.summary)
     }
 }

@@ -23,6 +23,8 @@ final class VMInstallJob: Identifiable {
         var startAfterInstall = true
         var keepRestoreImage = true
         var snapshotAfterInstall = true
+        var purpose: VMPurpose = .everyday
+        var remoteAccess = RemoteAccessSettings()
     }
 
     enum Stage: Int, CaseIterable, Comparable {
@@ -223,7 +225,9 @@ final class VMInstallJob: Identifiable {
             macAddress: VZMACAddress.randomLocallyAdministered().string,
             shares: request.shares,
             osVersion: restoreImageInfo?.version,
-            osBuild: restoreImageInfo?.build)
+            osBuild: restoreImageInfo?.build,
+            purpose: request.purpose,
+            remoteAccess: request.remoteAccess.enabled ? request.remoteAccess : nil)
         let url = library.vmsURL.appending(path: "\(library.sanitize(name)).\(VMBundle.pathExtension)")
         let bundle = try VMBundle.create(at: url, config: config, hardwareModel: requirements.hardwareModel)
         let item = library.registerInstalling(bundle: bundle, config: config, job: self)

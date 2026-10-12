@@ -179,6 +179,8 @@ final class VMInstallJob: Identifiable {
             status = .cancelled
         } catch {
             progressObservation = nil
+            // cancel() already set the status; the installer reports cancellation as an NSError.
+            if status == .cancelled { return }
             let resumable: Bool
             if case CoveError.downloadFailed(_, let r) = error { resumable = r } else { resumable = false }
             if stage >= .install, let id = vmID, let item = library.item(id: id) {

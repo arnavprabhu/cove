@@ -179,9 +179,9 @@ struct NewVMView: View {
                     Text("A specific version").font(.system(size: 15, weight: .semibold))
                     Spacer()
                 }
-                .buttonStyle(.plain)
                 .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
             if cachedImages.isEmpty {
                 Text("No cached restore images yet. Choose a local .ipsw file below to install a specific version.")
                     .font(Theme.Font.body).foregroundStyle(Theme.textSecondary).padding(.leading, 29)
@@ -344,7 +344,7 @@ struct NewVMView: View {
     private var footerText: String {
         switch source {
         case .latest: "Cove will download macOS from Apple, then install it. You can keep using your Mac."
-        case .version: "The selected version is downloaded from Apple, then installed."
+        case .version: "Cove verifies the selected restore image, then installs it."
         case .file: "Cove verifies the restore image before installing."
         }
     }

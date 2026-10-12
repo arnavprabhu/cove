@@ -132,6 +132,9 @@ enum GuestAccess {
         // Current location first; VMs set up by earlier builds wrote inside the (now read-only) Cove folder.
         for url in [item.bundle.guestStatusURL.appending(path: "user"),
                     item.bundle.guestFolderURL.appending(path: "status/user")] {
+            // The containing folder must be a real directory too — a planted symlinked parent is not followed.
+            var dirInfo = stat()
+            guard lstat(url.deletingLastPathComponent().path, &dirInfo) == 0, (dirInfo.st_mode & S_IFMT) == S_IFDIR else { continue }
             var info = stat()
             guard lstat(url.path, &info) == 0, (info.st_mode & S_IFMT) == S_IFREG, info.st_size <= 256,
                   let raw = try? String(contentsOf: url, encoding: .utf8) else { continue }

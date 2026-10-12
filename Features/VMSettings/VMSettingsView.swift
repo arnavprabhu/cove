@@ -46,6 +46,14 @@ struct VMSettingsView: View {
     @State private var cloneName = ""
     @State private var isSaving = false
 
+    #if DEBUG
+    static func networkSample(vmID: UUID) -> VMSettingsView {
+        var view = VMSettingsView(vmID: vmID)
+        view._tab = State(initialValue: .network)
+        return view
+    }
+    #endif
+
     var body: some View {
         Group {
             if let item = library.item(id: vmID), let draft {
@@ -56,7 +64,7 @@ struct VMSettingsView: View {
                     .frame(width: 720, height: 480)
             }
         }
-        .onAppear { loadDraft() }
+        .onAppear { loadDraft(); GuestAccessMonitor.shared.refresh(library: library) }
         .onChange(of: vmID) { _, _ in loadDraft() }
         .coveAlert($alert)
         .focusedSceneValue(\.focusedVMID, vmID)
@@ -404,6 +412,25 @@ struct VMSettingsView: View {
                     .foregroundStyle(Theme.textTertiary)
                     .padding(.horizontal, 14)
                     .padding(.bottom, 8)
+            }
+            CardDivider()
+            if isLive {
+                row {
+                    Text("IP address")
+                    Spacer()
+                    let ip = GuestAccessMonitor.shared.status(for: item.id).ip
+                        ?? item.config.macAddress.flatMap { GuestAccess.ipAddress(forMAC: $0) }
+                    Text(ip ?? "Waiting for an address…")
+                        .font(Theme.Font.mono).foregroundStyle(Theme.textSecondary).textSelection(.enabled)
+                    if let ip { RemoteCopyButton(text: ip, label: "Copy IP") }
+                }
+                CardDivider()
+            }
+            row {
+                Label("SSH & Agent Access", systemImage: "terminal")
+                Spacer()
+                Button("Open Walkthrough") { openWindow(id: WindowID.remoteAccess, value: item.id) }
+                    .buttonStyle(.covesecondary)
             }
             CardDivider()
             row {

@@ -128,6 +128,13 @@ struct CoveCommands: Commands {
             .keyboardShortcut("i")
             .disabled(focusedVMID == nil)
 
+            Button("SSH & Agent Access…") {
+                guard let id = focusedVMID else { return }
+                AppRouter.shared.open(.remoteAccess(id))
+            }
+            .keyboardShortcut("k", modifiers: [.command, .shift])
+            .disabled(focusedVMID == nil)
+
             Button("Show in Finder") {
                 guard let item = focusedItem else { return }
                 VMActions.showInFinder(item)

@@ -140,6 +140,18 @@ struct VMContextMenu: View {
 
             Divider()
 
+            Button("SSH & Agent Access…") {
+                openWindow(id: WindowID.remoteAccess, value: item.id)
+            }
+            Button("Copy SSH Command") {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(item.remoteSSHCommand(library: library), forType: .string)
+                NotificationCenter.default.post(name: .coveCopiedSSHCommand, object: item.id)
+            }
+            .disabled(!item.remoteAccessProgress.ready)
+
+            Divider()
+
             Button("Snapshots") {
                 openWindow(id: WindowID.snapshots, value: item.id)
             }
@@ -169,4 +181,8 @@ struct VMContextMenu: View {
             Button("Delete…", role: .destructive) { onDelete() }
         }
     }
+}
+
+extension Notification.Name {
+    static let coveCopiedSSHCommand = Notification.Name("CoveCopiedSSHCommand")
 }

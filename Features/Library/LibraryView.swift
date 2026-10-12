@@ -5,6 +5,7 @@ struct LibraryView: View {
     @State private var selection: LibrarySelection?
     @State private var searchText = ""
     @State private var alert: CoveAlert?
+    @State private var copiedSSH = false
     @State var diskSpace = DiskSpaceMonitor.shared
 
     var body: some View {
@@ -25,6 +26,22 @@ struct LibraryView: View {
         .focusedSceneValue(\.focusedVMID, focusedVMID)
         .onAppear { ensureSelection() }
         .onChange(of: library.items.map(\.id)) { _, _ in ensureSelection() }
+        .onReceive(NotificationCenter.default.publisher(for: .coveCopiedSSHCommand)) { _ in copiedSSH = true }
+        .overlay(alignment: .bottom) {
+            if copiedSSH {
+                Label("Copied SSH command", systemImage: "checkmark.circle.fill")
+                    .font(Theme.Font.body).foregroundStyle(Theme.textPrimary)
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .background(Theme.cell, in: Capsule())
+                    .overlay(Capsule().strokeBorder(Theme.cellBorder))
+                    .padding(.bottom, 20).allowsHitTesting(false)
+            }
+        }
+        .task(id: copiedSSH) {
+            guard copiedSSH else { return }
+            try? await Task.sleep(for: .seconds(2))
+            if !Task.isCancelled { copiedSSH = false }
+        }
     }
 
     private var focusedVMID: UUID? {

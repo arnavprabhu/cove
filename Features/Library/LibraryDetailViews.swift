@@ -177,6 +177,8 @@ struct VMDetailView: View {
                 CardDivider()
                 SpecRow("Network", item.config.network.label)
             }
+
+            RemoteAccessCard(item: item)
         }
     }
 

@@ -10,6 +10,7 @@ final class AppRouter {
         case install(UUID)
         case vmSettings(UUID)
         case snapshots(UUID)
+        case remoteAccess(UUID)
         case library
     }
 
@@ -34,6 +35,7 @@ struct AppRouterModifier: ViewModifier {
             case .install(let id): openWindow(id: WindowID.install, value: id)
             case .vmSettings(let id): openWindow(id: WindowID.vmSettings, value: id)
             case .snapshots(let id): openWindow(id: WindowID.snapshots, value: id)
+            case .remoteAccess(let id): openWindow(id: WindowID.remoteAccess, value: id)
             case .library: openWindow(id: WindowID.library)
             }
             NSApp.activate()

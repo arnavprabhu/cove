@@ -43,6 +43,9 @@ enum HostInfo {
         return UInt64(max(0, v?.volumeAvailableCapacityForImportantUsage ?? 0))
     }
 
+    /// Keep enough headroom for guest writes and saved state when starting a VM.
+    static let minimumVMStartFreeSpace = Bytes.gb(5)
+
     /// Rough space a fresh install needs: restore image (~27 GB for macOS 27) + installed system (~25 GB).
     static let estimatedInstallFootprint: UInt64 = Bytes.gb(55)
 

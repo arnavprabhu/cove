@@ -23,8 +23,10 @@ enum CoveAlert: Identifiable, Equatable {
         }
     }
 
+    @MainActor
     static func from(_ error: Error, starting item: VMItem? = nil) -> CoveAlert {
         if case CoveError.licenseLimit = error { return .licenseLimit(startingVMID: item?.id) }
+        if case CoveError.notEnoughDiskSpace(_, let available) = error { return .lowDiskSpace(available: available) }
         return .error(title: "Something went wrong", message: error.localizedDescription)
     }
 }
@@ -38,10 +40,11 @@ extension View {
 
 private struct CoveAlertModifier: ViewModifier {
     @Binding var alert: CoveAlert?
+    @State private var pendingAlert: CoveAlert?
     @Environment(VMLibrary.self) private var library
 
     func body(content: Content) -> some View {
-        content.alert(alert?.title ?? "", isPresented: Binding(get: { alert != nil && !isLicenseLimit }, set: { if !$0 { alert = nil } }),
+        content.alert(alert?.title ?? "", isPresented: Binding(get: { alert != nil && !isLicenseLimit }, set: { if !$0 && !isLicenseLimit { alert = nil } }),
                       presenting: alert) { a in
             switch a {
             case .licenseLimit:
@@ -57,9 +60,9 @@ private struct CoveAlertModifier: ViewModifier {
                 Button("OK", role: .cancel) {}
             case .downloadFailed(let jobID, _, let resumable):
                 if resumable {
-                    Button("Resume Download") { library.installJob(id: jobID)?.retry() }
+                    Button("Resume Download") { retryInstall(id: jobID) }
                 } else {
-                    Button("Try Again") { library.installJob(id: jobID)?.retry() }
+                    Button("Try Again") { retryInstall(id: jobID) }
                 }
                 Button("Cancel", role: .cancel) { library.installJob(id: jobID)?.cancel() }
             case .error:
@@ -68,22 +71,49 @@ private struct CoveAlertModifier: ViewModifier {
         } message: { a in
             Text(a.message)
         }
-        .sheet(isPresented: Binding(get: { isLicenseLimit }, set: { if !$0 { alert = nil } })) {
+        .sheet(isPresented: Binding(get: { isLicenseLimit }, set: { if !$0 && isLicenseLimit { alert = nil } }), onDismiss: {
+            if let pendingAlert {
+                alert = pendingAlert
+                self.pendingAlert = nil
+            }
+        }) {
             if case .licenseLimit(let id) = alert {
-                LicenseLimitView(target: id.flatMap { library.item(id: $0) }, runningItems: library.liveItems,
-                                 onCancel: { alert = nil }) { runningItem in
+                LicenseLimitView(targetName: id.flatMap { library.item(id: $0)?.name }, runningItems: library.liveItems.map {
+                    .init(id: $0.id, name: $0.name, canSuspend: $0.state == .running || $0.state == .paused)
+                },
+                                 onCancel: { alert = nil }) { runningID in
                     guard let id, let target = library.item(id: id) else {
                         throw CoveError.io("The virtual machine is no longer in the library.")
                     }
-                    guard let session = runningItem.session else {
+                    let available = library.freeSpace
+                    guard available >= HostInfo.minimumVMStartFreeSpace else {
+                        pendingAlert = .lowDiskSpace(available: available)
+                        alert = nil
+                        return
+                    }
+                    guard let session = library.item(id: runningID)?.session else {
                         throw CoveError.io("This virtual machine has already stopped. Try starting your VM again.")
                     }
                     try await session.suspend()
-                    try await library.start(target)
+                    do { try await library.start(target) }
+                    catch CoveError.notEnoughDiskSpace(_, let available) {
+                        pendingAlert = .lowDiskSpace(available: available)
+                        alert = nil
+                        return
+                    }
                     AppRouter.shared.openConsole(target.id)
                     alert = nil
                 }
             }
+        }
+    }
+
+    private func retryInstall(id: UUID) {
+        let available = library.freeSpace
+        if available < HostInfo.minimumVMStartFreeSpace {
+            DispatchQueue.main.async { alert = .lowDiskSpace(available: available) }
+        } else {
+            library.installJob(id: id)?.retry()
         }
     }
 

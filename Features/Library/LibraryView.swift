@@ -5,13 +5,19 @@ struct LibraryView: View {
     @State private var selection: LibrarySelection?
     @State private var searchText = ""
     @State private var alert: CoveAlert?
+    @State var diskSpace = DiskSpaceMonitor.shared
 
     var body: some View {
         NavigationSplitView {
             LibrarySidebar(selection: $selection, alert: $alert, searchText: searchText)
                 .navigationSplitViewColumnWidth(min: 220, ideal: 248, max: 320)
         } detail: {
-            detail
+            VStack(spacing: 0) {
+                if diskSpace.level != .normal, let available = diskSpace.available {
+                    LowDiskSpaceBanner(available: available).padding(16)
+                }
+                detail
+            }
         }
         .navigationSplitViewStyle(.balanced)
         .searchable(text: $searchText, placement: .toolbar, prompt: "Search")

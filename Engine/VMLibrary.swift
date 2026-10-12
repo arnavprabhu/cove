@@ -133,6 +133,7 @@ final class VMLibrary {
 
     /// Starts (or resumes from suspend) a VM. Throws `CoveError.licenseLimit` if two are already running.
     func start(_ item: VMItem, recovery: Bool = false) async throws {
+        try checkStartSpace()
         if let session = item.session, session.state.isLive {
             if session.state == .paused { try await session.resume() }
             return
@@ -162,8 +163,16 @@ final class VMLibrary {
     }
 
     func restart(_ item: VMItem) async throws {
+        try checkStartSpace()
         if let session = item.session { try await session.forceStop() }
         try await start(item)
+    }
+
+    private func checkStartSpace() throws {
+        let available = freeSpace
+        guard available >= HostInfo.minimumVMStartFreeSpace else {
+            throw CoveError.notEnoughDiskSpace(needed: HostInfo.minimumVMStartFreeSpace, available: available)
+        }
     }
 
     /// Suspends every running VM (used on quit when the "suspend on quit" preference is on).

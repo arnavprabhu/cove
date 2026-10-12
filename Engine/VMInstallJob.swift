@@ -48,7 +48,7 @@ final class VMInstallJob: Identifiable {
     }
 
     let id = UUID()
-    let request: Request
+    private(set) var request: Request
     private(set) var stage: Stage = .check
     private(set) var status: Status = .running
     /// 0…1 progress of the current stage.
@@ -83,8 +83,9 @@ final class VMInstallJob: Identifiable {
     }
 
     /// Retry after a failure (downloads resume from where they stopped).
-    func retry() {
+    func retry(using file: URL? = nil) {
         guard case .failed = status else { return }
+        if let file { request.source = .file(file) }
         run()
     }
 

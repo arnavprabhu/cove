@@ -38,6 +38,10 @@ targets:
         COMBINE_HIDPI_IMAGES: YES
         # Set to YES once Apple grants com.apple.vm.networking (see Cove.entitlements).
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited)"
+      configs:
+        Release:
+          # No debugger-attach entitlement in shipped builds.
+          CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
   CoveTests:
     type: bundle.unit-test
     platform: macOS

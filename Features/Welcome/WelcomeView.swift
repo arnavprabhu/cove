@@ -17,7 +17,7 @@ struct WelcomeView: View {
                 Text("Welcome to Cove")
                     .font(Theme.Font.largeTitle)
                     .padding(.top, 24)
-                Text("A spare Mac, inside your Mac. Try things, build and test, or hand coding agents a sandbox — and keep it all off the Mac you rely on. Cove sets up macOS in one click.")
+                Text("Give AI agents and assistants a Mac of their own, so they can build, test and get things done without the run of yours. It’s a spare Mac for trying things, too. Cove sets up macOS in one click.")
                     .font(.system(size: 15))
                     .foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)

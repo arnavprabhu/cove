@@ -84,7 +84,7 @@ struct RemoteAccessView: View {
 
     private let titles = ["Turn on SSH access", "Start the VM and finish Setup Assistant",
                           "Run the setup command in the VM", "Connect from your Mac",
-                          "Let Terminal and coding agents use it"]
+                          "Let Terminal and your agents use it"]
 
     private func progress(_ item: VMItem) -> RemoteAccessProgress {
         #if DEBUG
@@ -149,7 +149,7 @@ struct RemoteAccessView: View {
                 }
                 .accessibilityElement(children: .combine)
             }
-            Text("Connect from your Mac, then give your coding agents a place to work.")
+            Text("Connect from your Mac, then give your agents a Mac of their own to work in.")
                 .foregroundStyle(Theme.textSecondary)
         }
         .padding(24)
@@ -251,7 +251,7 @@ struct RemoteAccessView: View {
             if progress.hostInstalled {
                 Label("Cove is added to your Mac’s SSH config", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(Theme.running)
-                Text("`ssh \(GuestAccess.alias(for: item.name))` works in Terminal and coding agents while this VM is running.")
+                Text("`ssh \(GuestAccess.alias(for: item.name))` works in Terminal and in your agents while this VM is running.")
             } else {
                 note("Make the short SSH name work from Terminal, Claude Code, Codex, and other agents on your Mac.")
                 Button("Add Cove to ~/.ssh/config…") { installHostSSH() }

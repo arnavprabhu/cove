@@ -1,13 +1,14 @@
 import Foundation
 
 /// What a VM is for. Chosen when creating a VM; sets sensible defaults (resources, SSH access, snapshots).
+/// Case order is display order (Welcome tiles, New VM picker); `.everyday` stays the default selection.
 enum VMPurpose: String, Codable, CaseIterable, Identifiable {
+    /// A Mac of its own for AI agents and assistants, reached over SSH.
+    case agentSandbox
     /// A spare Mac for trying apps, betas and settings without touching your own.
     case everyday
     /// Clean macOS for builds, installers and OS-version testing.
     case development
-    /// A disposable machine coding agents use over SSH.
-    case agentSandbox
 
     var id: String { rawValue }
 
@@ -29,9 +30,9 @@ enum VMPurpose: String, Codable, CaseIterable, Identifiable {
 
     var summary: String {
         switch self {
-        case .everyday: "Try apps, betas and settings. Snapshot first, roll back anytime."
+        case .everyday: "Try apps, betas and downloads. Snapshot first, roll back anytime."
         case .development: "A clean Mac for builds, installers and testing other macOS versions."
-        case .agentSandbox: "Coding agents run code here over SSH, away from your files."
+        case .agentSandbox: "A Mac of its own for AI agents and assistants, reached over SSH."
         }
     }
 

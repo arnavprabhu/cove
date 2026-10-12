@@ -177,7 +177,7 @@ struct VMWindow: View {
             Button { runAsync { try await session.resume() } } label: {
                 Image(systemName: "play.fill").font(.system(size: 25, weight: .semibold)).foregroundStyle(.white)
                     .frame(width: 76, height: 76).background(.white.opacity(0.16), in: Circle())
-            }.buttonStyle(.plain).help("Resume the virtual machine").accessibilityLabel("Resume")
+            }.buttonStyle(.coveplain).help("Resume the virtual machine").accessibilityLabel("Resume")
             Text("Paused").font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
             Text("The VM is frozen in memory. Resume to continue exactly where you were.")
                 .font(Theme.Font.small).foregroundStyle(Color(hex: 0xA1A1A6))
@@ -247,7 +247,7 @@ struct VMWindow: View {
                         do { try updateShares(item) { $0.removeAll { $0.id == share.id } } }
                         catch { alert = .from(error) }
                     } label: { Image(systemName: "minus.circle") }
-                        .buttonStyle(.plain).help("Remove shared folder").accessibilityLabel("Remove \(share.name)")
+                        .buttonStyle(.coveplain).help("Remove shared folder").accessibilityLabel("Remove \(share.name)")
                 }
             }
             Button { addFolder(to: item) } label: { Label("Add Folder…", systemImage: "plus") }

@@ -106,7 +106,7 @@ struct VMDetailView: View {
                             .frame(width: 64, height: 64)
                             .background(Color.white.opacity(0.14), in: Circle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.coveplain)
                     .accessibilityLabel(LibraryFormatting.primaryActionTitle(for: item))
                     Text(overlayLabel)
                         .font(Theme.Font.body)
@@ -191,7 +191,7 @@ struct VMDetailView: View {
                 Button("Show All") {
                     openWindow(id: WindowID.snapshots, value: item.id)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.coveplain)
                 .foregroundStyle(Theme.link)
                 .font(Theme.Font.body)
             }
@@ -218,7 +218,7 @@ struct VMDetailView: View {
                         .background(Theme.cell, in: RoundedRectangle(cornerRadius: 10))
                         .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.cellBorder))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.coveplain)
                 }
 
                 Button {
@@ -238,7 +238,7 @@ struct VMDetailView: View {
                             .strokeBorder(Theme.control, style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.coveplain)
                 .disabled(item.state == .installing)
             }
         }

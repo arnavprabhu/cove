@@ -236,7 +236,7 @@ struct SnapshotsView: View {
             )
             .foregroundStyle(Theme.textPrimary)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.coveplain)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityLabel(timelineAccessibilityLabel(title: title, subtitle: subtitle, size: size,

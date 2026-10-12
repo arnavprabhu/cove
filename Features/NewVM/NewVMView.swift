@@ -163,7 +163,7 @@ struct NewVMView: View {
             .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(sourceSelection(kind) ? Theme.accent : Theme.cellBorder, lineWidth: sourceSelection(kind) ? 1.5 : 1))
             .contentShape(RoundedRectangle(cornerRadius: 14))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.coveplain)
     }
 
     private enum SourceChoice { case latest, version, file }
@@ -185,7 +185,7 @@ struct NewVMView: View {
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.coveplain)
             if cachedImages.isEmpty {
                 Text("No cached restore images yet. Choose a local .ipsw file below to install a specific version.")
                     .font(Theme.Font.body).foregroundStyle(Theme.textSecondary).padding(.leading, 29)
@@ -214,7 +214,7 @@ struct NewVMView: View {
                     Spacer()
                 }
                 .contentShape(Rectangle())
-            }.buttonStyle(.plain)
+            }.buttonStyle(.coveplain)
             HStack(spacing: 12) {
                 Image(systemName: "doc.badge.arrow.down").font(.system(size: 20)).foregroundStyle(Theme.textSecondary)
                 Text(selectedFileURL?.lastPathComponent ?? "Drop an .ipsw file here")
@@ -299,7 +299,7 @@ struct NewVMView: View {
                             Spacer(minLength: 0)
                             Toggle("Read only", isOn: $share.readOnly).labelsHidden().help("Read only")
                             Button { shares.removeAll { $0.id == share.id } } label: { Image(systemName: "minus.circle") }
-                                .buttonStyle(.plain).foregroundStyle(Theme.destructive).accessibilityLabel("Remove shared folder \(share.name)")
+                                .buttonStyle(.coveplain).foregroundStyle(Theme.destructive).accessibilityLabel("Remove shared folder \(share.name)")
                         }
                     }
                     Button { addFolder() } label: { Label("Add folder…", systemImage: "plus") }.buttonStyle(.link)

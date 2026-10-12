@@ -171,3 +171,17 @@ struct CoveLogo: View {
             .accessibilityHidden(true)
     }
 }
+
+/// Like `.plain`, but the whole label frame is clickable — not just its opaque pixels — and it dims while pressed.
+/// Use for custom tiles, tabs, rows and icon buttons.
+struct CovePlainButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .contentShape(Rectangle())
+            .opacity(configuration.isPressed ? 0.6 : 1)
+    }
+}
+
+extension ButtonStyle where Self == CovePlainButtonStyle {
+    static var coveplain: CovePlainButtonStyle { CovePlainButtonStyle() }
+}

@@ -127,7 +127,7 @@ struct VMSettingsView: View {
                             .fill(tab == t ? Color.primary.opacity(0.10) : .clear)
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.coveplain)
                 .accessibilityLabel(t.title)
                 .accessibilityAddTraits(tab == t ? .isSelected : [])
             }
@@ -367,7 +367,7 @@ struct VMSettingsView: View {
                 Button("Manage…") {
                     openWindow(id: WindowID.snapshots, value: item.id)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.coveplain)
                 .foregroundStyle(Theme.link)
             }
         }
@@ -491,7 +491,7 @@ struct VMSettingsView: View {
                 Label("Add folder…", systemImage: "plus")
                     .foregroundStyle(Theme.link)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.coveplain)
             .padding(.horizontal, 14)
             .padding(.vertical, 11)
             .accessibilityLabel("Add folder")

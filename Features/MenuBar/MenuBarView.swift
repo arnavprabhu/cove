@@ -108,7 +108,7 @@ struct MenuBarView: View {
 
             if item.state == .running || item.state == .paused {
                 Button("Show Window") { openWindow(id: WindowID.console, value: item.id) }
-                    .font(.system(size: 11)).buttonStyle(.plain).foregroundStyle(Theme.link)
+                    .font(.system(size: 11)).buttonStyle(.coveplain).foregroundStyle(Theme.link)
                     .help("Show \(item.name) window")
             }
 
@@ -167,6 +167,7 @@ struct MenuBarView: View {
 private struct MenuRowButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .contentShape(Rectangle())
             .background(configuration.isPressed ? Theme.accentFill : .clear, in: RoundedRectangle(cornerRadius: 5))
     }
 }

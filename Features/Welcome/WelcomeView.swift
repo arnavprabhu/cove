@@ -158,7 +158,7 @@ struct WelcomeView: View {
             .padding(10)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.coveplain)
         .accessibilityLabel(title)
         .accessibilityHint(detail)
     }

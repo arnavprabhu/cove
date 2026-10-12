@@ -102,7 +102,7 @@ struct LibrarySidebar: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.coveplain)
             .padding(.horizontal, 10)
             .padding(.bottom, 12)
         }

@@ -107,40 +107,39 @@ Apple's App Sandbox.
 
 ## Screenshots
 
-<table>
-<tr>
-<td width="50%">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/screen-welcome-dark.png">
-  <img src="docs/images/screen-welcome-light.png" alt="Welcome screen: Give AI agents and assistants a Mac of their own. Three tiles — Agent sandbox, Everyday & tinkering, Development & testing — and a Create macOS Virtual Machine button. A sidebar checks this Mac's readiness.">
+  <img src="docs/images/screen-welcome-light.png" width="100%" alt="Welcome screen: Give AI agents and assistants a Mac of their own. Three tiles — Agent sandbox, Everyday & tinkering, Development & testing — and a Create macOS Virtual Machine button. A sidebar checks this Mac's readiness.">
 </picture>
-<p align="center"><sub><b>Welcome</b> — pick what the VM is for</sub></p>
-</td>
-<td width="50%">
+<p align="center"><sub><b>Welcome</b> — pick what the VM is for, and Cove checks your Mac is ready</sub></p>
+
+<table>
+<tr>
+<td width="50%" valign="top">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/screen-new-vm-dark.png">
   <img src="docs/images/screen-new-vm-light.png" alt="New Virtual Machine sheet: Latest from Apple is recommended; on the right, What's it for?, the VM name, and resources sized for this Mac.">
 </picture>
 <p align="center"><sub><b>New Virtual Machine</b> — latest macOS, sized for your Mac</sub></p>
 </td>
-</tr>
-<tr>
-<td width="50%">
+<td width="50%" valign="top">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/screen-library-dark.png">
   <img src="docs/images/screen-library-light.png" alt="Library window listing three VMs, with the selected VM's resources, SSH & Agent Access status and a row of snapshots.">
 </picture>
 <p align="center"><sub><b>Library</b> — your VMs, their snapshots and SSH status</sub></p>
 </td>
-<td width="50%">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/screen-ssh-agent-access-dark.png">
-  <img src="docs/images/screen-ssh-agent-access-light.png" alt="SSH & Agent Access walkthrough with five completed steps, agent instructions to copy into CLAUDE.md or AGENTS.md, and a Take Snapshot button.">
-</picture>
-<p align="center"><sub><b>SSH & Agent Access</b> — five guided steps to <code>ssh cove-&lt;name&gt;</code></sub></p>
-</td>
 </tr>
 </table>
+
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/screen-ssh-agent-access-dark.png">
+  <img src="docs/images/screen-ssh-agent-access-light.png" width="480" alt="SSH & Agent Access walkthrough with five completed steps, agent instructions to copy into CLAUDE.md or AGENTS.md, and a Take Snapshot button.">
+</picture>
+<br>
+<sub><b>SSH & Agent Access</b> — five guided steps to <code>ssh cove-&lt;name&gt;</code>, plus instructions for your agent</sub>
+</p>
 
 <sub>Screenshots use sample data.</sub>
 

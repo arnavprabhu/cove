@@ -95,7 +95,7 @@ enum VMActions {
     }
 }
 
-/// Context menu for a VM in the sidebar (States.dc.html + Library brief).
+/// Context menu for a VM in the sidebar.
 struct VMContextMenu: View {
     let item: VMItem
     @Binding var alert: CoveAlert?

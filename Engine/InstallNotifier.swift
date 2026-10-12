@@ -1,6 +1,6 @@
 import UserNotifications
 
-/// User notifications for background installs ("VM ready" in States.dc.html).
+/// User notifications for background installs ("VM ready" / install failed).
 enum InstallNotifier {
     static let categoryReady = "VM_READY"
     static let actionOpen = "OPEN_VM"

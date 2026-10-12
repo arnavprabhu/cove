@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Alerts from States.dc.html. Present with `.coveAlert($alert)`; any screen can use these.
+/// App-wide alerts (license limit, delete, low disk, download failed). Present with `.coveAlert($alert)`; any screen can use these.
 enum CoveAlert: Identifiable, Equatable {
     /// Third macOS VM start attempted while two are running.
     case licenseLimit(startingVMID: UUID?)

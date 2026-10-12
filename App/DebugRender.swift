@@ -3,7 +3,7 @@ import AppKit
 import SwiftUI
 
 /// Debug-only: `-coveRender <outputDir>` renders each screen against a throwaway sample library to PNGs
-/// (dark and light), for comparing with the mockups in `design/`. No screen-recording permission needed.
+/// (dark and light), for visual review. No screen-recording permission needed.
 @MainActor
 enum DebugRender {
     static func runIfRequested() {

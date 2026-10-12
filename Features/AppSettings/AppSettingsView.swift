@@ -2,7 +2,7 @@ import AppKit
 import ServiceManagement
 import SwiftUI
 
-/// App-wide Settings scene (design/AppSettings.dc.html) — sidebar + detail panes.
+/// App-wide Settings scene — sidebar + detail panes.
 struct AppSettingsView: View {
     private enum Pane: String, CaseIterable, Identifiable, Hashable {
         case general, defaults, storage, updates

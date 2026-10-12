@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Full-window gate when Apple silicon or Virtualization.framework is unavailable (States.dc.html).
+/// Full-window gate when Apple silicon or Virtualization.framework is unavailable.
 struct UnsupportedMacView: View {
     private var isIntel: Bool { !HostInfo.isAppleSilicon }
     private var chipLabel: String {

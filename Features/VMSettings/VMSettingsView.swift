@@ -3,7 +3,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import Virtualization
 
-/// Per-VM settings window with seven tabs (design/VMSettings.dc.html).
+/// Per-VM settings window with seven tabs.
 struct VMSettingsView: View {
     var vmID: UUID
 

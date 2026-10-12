@@ -63,4 +63,17 @@ final class GuestAccessTests: XCTestCase {
         XCTAssertTrue(off.contains("rm -f /etc/sudoers.d/cove"))
         XCTAssertTrue(off.contains(#"echo "$ME" > "$DIR/status/user""#))
     }
+
+    func testSetupScriptIsValidShell() throws {
+        for sudo in [true, false] {
+            let url = FileManager.default.temporaryDirectory.appending(path: "cove-setup-\(UUID().uuidString).sh")
+            try GuestAccess.setupScript(alias: "cove-x", passwordlessSudo: sudo).write(to: url, atomically: true, encoding: .utf8)
+            defer { try? FileManager.default.removeItem(at: url) }
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/bin/sh")
+            p.arguments = ["-n", url.path]
+            try p.run(); p.waitUntilExit()
+            XCTAssertEqual(p.terminationStatus, 0, "setup.sh (sudo: \(sudo)) has a syntax error")
+        }
+    }
 }

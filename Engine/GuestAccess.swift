@@ -81,10 +81,14 @@ enum GuestAccess {
         ME="$(id -un)"
         echo "Cove: setting up SSH for $ME. macOS will ask for your password."
 
-        if ! sudo systemsetup -setremotelogin on >/dev/null 2>&1; then
-          sudo launchctl enable system/com.openssh.sshd
-          sudo launchctl bootstrap system /System/Library/LaunchDaemons/ssh.plist 2>/dev/null || \\
-            sudo launchctl kickstart -k system/com.openssh.sshd
+        # systemsetup needs Full Disk Access on recent macOS and can fail quietly, so always ensure sshd via launchd.
+        sudo systemsetup -setremotelogin on >/dev/null 2>&1 || true
+        sudo launchctl enable system/com.openssh.sshd
+        sudo launchctl bootstrap system /System/Library/LaunchDaemons/ssh.plist 2>/dev/null || true
+        sleep 1
+        if ! nc -z 127.0.0.1 22 >/dev/null 2>&1; then
+          echo "Cove: SSH didn't start. Turn on System Settings ▸ General ▸ Sharing ▸ Remote Login, then run this again."
+          exit 1
         fi
 
         mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"

@@ -123,10 +123,12 @@ struct MenuBarView: View {
                     .help("Shut Down \(item.name)").accessibilityLabel("Shut Down \(item.name)")
             } else if item.state == .stopped || item.state == .suspended {
                 Button(item.state == .suspended ? "Resume" : "Start") {
-                    runAsync { try await library.start(item) }
+                    runAsync(starting: item) {
+                        try await library.start(item)
+                        AppRouter.shared.openConsole(item.id)
+                    }
                 }
                 .font(.system(size: 11, weight: .medium)).buttonStyle(.borderedProminent).controlSize(.small)
-                .disabled(!library.canStartAnother)
                 .help("\(item.state == .suspended ? "Resume" : "Start") \(item.name)")
             } else {
                 ProgressView().controlSize(.small).frame(width: 32)
@@ -151,9 +153,9 @@ struct MenuBarView: View {
         do { try action() } catch { alert = .from(error) }
     }
 
-    private func runAsync(_ action: @escaping () async throws -> Void) {
+    private func runAsync(starting item: VMItem? = nil, _ action: @escaping () async throws -> Void) {
         Task { @MainActor in
-            do { try await action() } catch { alert = .from(error) }
+            do { try await action() } catch { alert = .from(error, starting: item) }
         }
     }
 }

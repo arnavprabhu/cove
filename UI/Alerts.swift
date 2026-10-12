@@ -3,9 +3,9 @@ import SwiftUI
 /// Alerts from States.dc.html. Present with `.coveAlert($alert)`; any screen can use these.
 enum CoveAlert: Identifiable, Equatable {
     /// Third macOS VM start attempted while two are running.
-    case licenseLimit
+    case licenseLimit(startingVMID: UUID?)
     /// Confirm moving a VM to the Trash.
-    case confirmDelete(vmID: UUID, name: String, snapshotCount: Int)
+    case confirmDelete(vmID: UUID, name: String, snapshotCount: Int, bytes: UInt64)
     /// Library volume is low on space.
     case lowDiskSpace(available: UInt64)
     /// Restore image download failed; `resumable` offers "Resume Download".
@@ -16,15 +16,15 @@ enum CoveAlert: Identifiable, Equatable {
     var id: String {
         switch self {
         case .licenseLimit: "license"
-        case .confirmDelete(let id, _, _): "delete-\(id)"
+        case .confirmDelete(let id, _, _, _): "delete-\(id)"
         case .lowDiskSpace: "lowdisk"
         case .downloadFailed(let id, _, _): "download-\(id)"
         case .error(let t, let m): "error-\(t)-\(m)"
         }
     }
 
-    static func from(_ error: Error) -> CoveAlert {
-        if case CoveError.licenseLimit = error { return .licenseLimit }
+    static func from(_ error: Error, starting item: VMItem? = nil) -> CoveAlert {
+        if case CoveError.licenseLimit = error { return .licenseLimit(startingVMID: item?.id) }
         return .error(title: "Something went wrong", message: error.localizedDescription)
     }
 }
@@ -41,12 +41,12 @@ private struct CoveAlertModifier: ViewModifier {
     @Environment(VMLibrary.self) private var library
 
     func body(content: Content) -> some View {
-        content.alert(title, isPresented: Binding(get: { alert != nil }, set: { if !$0 { alert = nil } }),
+        content.alert(alert?.title ?? "", isPresented: Binding(get: { alert != nil && !isLicenseLimit }, set: { if !$0 { alert = nil } }),
                       presenting: alert) { a in
             switch a {
             case .licenseLimit:
                 Button("OK", role: .cancel) {}
-            case .confirmDelete(let id, _, _):
+            case .confirmDelete(let id, _, _, _):
                 Button("Move to Trash", role: .destructive) {
                     if let item = library.item(id: id) {
                         do { try library.delete(item) } catch { DispatchQueue.main.async { alert = .from(error) } }
@@ -66,34 +66,56 @@ private struct CoveAlertModifier: ViewModifier {
                 Button("OK", role: .cancel) {}
             }
         } message: { a in
-            Text(message(a))
+            Text(a.message)
+        }
+        .sheet(isPresented: Binding(get: { isLicenseLimit }, set: { if !$0 { alert = nil } })) {
+            if case .licenseLimit(let id) = alert {
+                LicenseLimitView(target: id.flatMap { library.item(id: $0) }, runningItems: library.liveItems,
+                                 onCancel: { alert = nil }) { runningItem in
+                    guard let id, let target = library.item(id: id) else {
+                        throw CoveError.io("The virtual machine is no longer in the library.")
+                    }
+                    guard let session = runningItem.session else {
+                        throw CoveError.io("This virtual machine has already stopped. Try starting your VM again.")
+                    }
+                    try await session.suspend()
+                    try await library.start(target)
+                    AppRouter.shared.openConsole(target.id)
+                    alert = nil
+                }
+            }
         }
     }
 
-    private var title: String {
-        switch alert {
+    private var isLicenseLimit: Bool {
+        if case .licenseLimit = alert { return true }
+        return false
+    }
+}
+
+extension CoveAlert {
+    var title: String {
+        switch self {
         case .licenseLimit: "Two macOS VMs are already running"
-        case .confirmDelete(_, let name, _): "Delete “\(name)”?"
-        case .lowDiskSpace: "Not enough space for a new VM"
+        case .confirmDelete(_, let name, _, _): "Delete “\(name)”?"
+        case .lowDiskSpace: "Not enough disk space"
         case .downloadFailed: "Couldn’t finish downloading macOS"
-        case .error(let t, _): t
-        case nil: ""
+        case .error(let title, _): title
         }
     }
 
-    private func message(_ a: CoveAlert) -> String {
-        switch a {
+    var message: String {
+        switch self {
         case .licenseLimit:
             "Apple’s macOS license allows two macOS virtual machines at a time on one Mac. Suspend one, then try again."
-        case .confirmDelete(_, _, let n):
-            "The VM’s disk" + (n > 0 ? " and its \(n) snapshot\(n == 1 ? "" : "s")" : "")
-                + " will be moved to the Trash. Files in shared folders on your Mac aren’t affected."
+        case .confirmDelete(_, _, let count, let bytes):
+            "Its virtual disk" + (count > 0 ? " and \(count) snapshot\(count == 1 ? "" : "s")" : "")
+                + " (\(Bytes.format(bytes))) will be moved to the Trash. Files in shared folders on your Mac aren’t affected."
         case .lowDiskSpace(let available):
-            "Cove needs about \(Bytes.format(HostInfo.estimatedInstallFootprint)) free to download and install macOS. Your Mac has \(Bytes.format(available)) available."
+            "Your library disk has \(Bytes.format(available)) available. Free up space before starting a VM. Cove needs about \(Bytes.format(HostInfo.estimatedInstallFootprint)) free to download and install macOS."
         case .downloadFailed(_, let message, let resumable):
             message + (resumable ? " Cove kept what was downloaded and will pick up from there." : "")
-        case .error(_, let m):
-            m
+        case .error(_, let message): message
         }
     }
 }

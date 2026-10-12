@@ -244,3 +244,23 @@ final class GuestFileReadTests: XCTestCase {
         XCTAssertNil(GuestAccess.readSmallGuestFile(dir.appending(path: "linkdir/user")))
     }
 }
+
+final class AgentSetupPromptTests: XCTestCase {
+    func testFreshVMPromptCoversEverythingAndSetsGuardrails() {
+        let p = GuestAccess.agentSetupPrompt(vmName: "Agent Sandbox", alias: "cove-agent-sandbox", osDescription: "macOS 27",
+            state: .init(accessEnabled: false, needsRestart: false, isLive: false, guestSetUp: false, hostInstalled: false, reachable: false))
+        for needle in ["SSH & agent access", "Start VM", "ask me for the", GuestAccess.setupCommand,
+                       "Add Cove to ~/.ssh/config…", "ssh cove-agent-sandbox 'sw_vers && whoami'", "Never invent"] {
+            XCTAssertTrue(p.contains(needle), needle)
+        }
+    }
+
+    func testOnlyRemainingStepsAreIncluded() {
+        let p = GuestAccess.agentSetupPrompt(vmName: "Dev", alias: "cove-dev", osDescription: "macOS 27",
+            state: .init(accessEnabled: true, needsRestart: false, isLive: true, guestSetUp: true, hostInstalled: false, reachable: true))
+        XCTAssertFalse(p.contains(GuestAccess.setupCommand))
+        XCTAssertFalse(p.contains("Turn on **SSH & agent access**"))
+        XCTAssertTrue(p.contains("Add Cove to ~/.ssh/config…"))
+        XCTAssertTrue(p.contains("1. In Cove's SSH & Agent Access window"))
+    }
+}

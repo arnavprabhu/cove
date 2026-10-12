@@ -441,3 +441,74 @@ final class OnceFlag: @unchecked Sendable {
 extension String {
     var nilIfEmpty: String? { isEmpty ? nil : self }
 }
+
+extension GuestAccess {
+    /// What's already done, so the prompt only asks for the remaining steps.
+    struct SetupState {
+        var accessEnabled: Bool
+        var needsRestart: Bool
+        var isLive: Bool
+        var guestSetUp: Bool
+        var hostInstalled: Bool
+        var reachable: Bool
+    }
+
+    /// A prompt for an agent that can see and control the screen (computer use) to finish SSH setup for the user.
+    nonisolated static func agentSetupPrompt(vmName: String, alias: String, osDescription: String, state: SetupState) -> String {
+        var steps: [String] = []
+        if !state.accessEnabled || state.needsRestart {
+            steps.append("""
+            In Cove, select “\(vmName)” in the Library sidebar, then open **SSH & Agent Access** (the SSH card, or \
+            Virtual Machine menu ▸ SSH & Agent Access…). Turn on **SSH & agent access**.\
+            \(state.needsRestart || state.isLive ? " If Cove shows a **Restart** button, click it." : "")
+            """)
+        }
+        if !state.guestSetUp {
+            if !state.isLive {
+                steps.append("Start the VM: click **Start VM** (or **Resume VM**) in the SSH & Agent Access window, and wait for the VM window to show macOS.")
+            }
+            steps.append("""
+            If the VM shows Setup Assistant, finish it in the VM window. Before creating the account, **ask me for the \
+            account name and password**. Don't sign in with an Apple Account (choose to set it up later) and turn off \
+            optional services such as Siri, Screen Time, Location Services and analytics.
+            """)
+            steps.append("""
+            Click inside the VM window so it has the keyboard. In the VM, open Terminal (⌘Space, type Terminal, \
+            Return) and **type** this exactly — copy and paste between my Mac and the VM doesn't work:
+                \(setupCommand)
+            Press Return, enter the VM account's password when asked, and wait for “Cove: done.”. Then press \
+            Control-Option (⌃⌥) to give the keyboard back to my Mac.
+            """)
+        }
+        if !state.hostInstalled {
+            steps.append("""
+            In Cove's SSH & Agent Access window, click **Add Cove to ~/.ssh/config…**. In the dialog, press \
+            ⌘⇧. to show hidden files, select the **.ssh** folder in my home folder (or my home folder itself if \
+            there's no .ssh folder), and confirm.
+            """)
+        }
+        steps.append("""
+        Check it works from Terminal on my Mac: `ssh \(alias) 'sw_vers && whoami'`. It should print the VM's macOS \
+        version and account name without asking for a password.
+        """)
+        steps.append("Tell me what you did, the output of that command, and anything that didn't go as described.")
+
+        let numbered = steps.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+        return """
+        Help me set up SSH access to a macOS virtual machine in Cove, an app on this Mac, so I and my AI agents can \
+        run commands in it with `ssh \(alias)`. You can see and control my screen. Work one step at a time, check \
+        the screen after each action, and stop to ask me if anything looks different from what's described.
+
+        Virtual machine: “\(vmName)” (\(osDescription))
+
+        Rules:
+        - Only make changes through Cove's windows and inside the VM. Don't edit files or install anything on my Mac yourself.
+        - Never invent, guess or reuse a password. Ask me for the VM account name and password.
+        - If my Mac asks for its own password or Touch ID, stop and let me do it.
+        - Don't sign in to any accounts in the VM.
+
+        Steps:
+        \(numbered)
+        """
+    }
+}

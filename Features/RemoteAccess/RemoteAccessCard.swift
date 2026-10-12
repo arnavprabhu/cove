@@ -23,6 +23,10 @@ struct RemoteAccessCard: View {
                 if progress.ready {
                     RemoteCopyButton(text: item.remoteSSHCommand(library: library), label: "Copy SSH Command")
                 }
+                if !progress.ready || !progress.hostInstalled {
+                    RemoteCopyButton(text: item.agentSetupPrompt, label: "Copy Agent Setup Prompt")
+                        .help("A prompt for Claude Code, Codex or any agent with computer use to finish SSH setup for you")
+                }
             }
             .font(Theme.Font.body).padding(14).frame(maxWidth: .infinity, alignment: .leading)
         }

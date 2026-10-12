@@ -35,6 +35,17 @@ Already have a VM? That works too — start at step 1.
 The window shows the five steps below. Each one turns green with **Done** when it's complete, and Cove checks the
 VM's status every few seconds, so you can just follow along.
 
+## Let an agent do the setup
+
+Have an AI agent that can see and control your screen (for example Claude Code or Codex with computer use)? Click
+**Copy Setup Prompt** at the top of **SSH & Agent Access** — or **Copy Agent Setup Prompt** on the VM's SSH card in
+the Library — and paste it into the agent.
+
+The prompt covers only the steps that are still left, using the exact button names in Cove. It also tells the agent
+to ask you for the VM's account name and password (never to make them up), not to sign in to any accounts, not to
+change anything on your Mac outside Cove, and to stop and hand over to you whenever your Mac asks for its own
+password or Touch ID. It finishes by checking `ssh cove-<name>` works and reporting what it did.
+
 ## The five steps
 
 ### Step 1 · Turn on SSH access

@@ -26,6 +26,15 @@ extension VMItem {
                              hostInstalled: GuestAccessMonitor.shared.hostInstalled)
     }
 
+    /// Prompt for a computer-use agent to finish whatever setup is left.
+    var agentSetupPrompt: String {
+        let p = remoteAccessProgress
+        return GuestAccess.agentSetupPrompt(
+            vmName: name, alias: GuestAccess.alias(for: name), osDescription: osDescription,
+            state: .init(accessEnabled: p.enabled, needsRestart: p.needsRestart, isLive: p.isLive,
+                         guestSetUp: p.status.guestUser != nil, hostInstalled: p.hostInstalled, reachable: p.ready))
+    }
+
     func remoteSSHCommand(library: VMLibrary) -> String {
         let status = GuestAccessMonitor.shared.status(for: id)
         return GuestAccess.sshCommand(alias: GuestAccess.alias(for: name), user: status.guestUser,
@@ -132,6 +141,25 @@ struct RemoteAccessView: View {
         }
     }
 
+    /// Hand the remaining steps to an agent with computer use (Claude Code, Codex, …).
+    private func agentHandoff(_ item: VMItem) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: "sparkles").font(.system(size: 16)).foregroundStyle(Theme.accent)
+                .frame(width: 22).accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Let an agent do it").fontWeight(.semibold)
+                Text("Copy a prompt for Claude Code, Codex or any agent that can use your screen. It covers just the steps left.")
+                    .font(Theme.Font.small).foregroundStyle(Theme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            RemoteCopyButton(text: item.agentSetupPrompt, label: "Copy Setup Prompt")
+        }
+        .padding(12)
+        .background(Theme.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.accent.opacity(0.25)))
+    }
+
     private func header(_ item: VMItem, progress: RemoteAccessProgress) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
@@ -151,6 +179,9 @@ struct RemoteAccessView: View {
             }
             Text("Connect from your Mac, then give your agents a Mac of their own to work in.")
                 .foregroundStyle(Theme.textSecondary)
+            if !progress.ready || !progress.hostInstalled {
+                agentHandoff(item)
+            }
         }
         .padding(24)
     }

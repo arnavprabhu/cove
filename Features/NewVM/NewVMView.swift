@@ -287,6 +287,7 @@ struct NewVMView: View {
                     ForEach($shares) { $share in
                         HStack(spacing: 8) {
                             Image(systemName: "folder.fill").foregroundStyle(Theme.accent)
+                                .accessibilityHidden(true)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(share.name).font(Theme.Font.body)
                                 Text(share.path).font(Theme.Font.caption).foregroundStyle(Theme.textTertiary).lineLimit(1)

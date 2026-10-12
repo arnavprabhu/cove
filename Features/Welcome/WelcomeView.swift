@@ -19,6 +19,7 @@ struct WelcomeView: View {
                     .frame(width: 112, height: 112)
                     .background(Theme.control, in: RoundedRectangle(cornerRadius: 26))
                     .overlay(RoundedRectangle(cornerRadius: 26).strokeBorder(Theme.cellBorder))
+                    .accessibilityHidden(true)
                 Text("Welcome to Cove")
                     .font(Theme.Font.largeTitle)
                     .padding(.top, 24)
@@ -88,6 +89,7 @@ struct WelcomeView: View {
                     .foregroundStyle(hostReady ? Theme.running : Theme.warning)
                     .frame(width: 36, height: 36)
                     .background((hostReady ? Theme.running : Theme.warning).opacity(0.14), in: Circle())
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(hostReady ? "Ready for virtual machines" : "Setup needed")
                         .font(.system(size: 14, weight: .semibold))
@@ -98,6 +100,7 @@ struct WelcomeView: View {
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.cell, in: RoundedRectangle(cornerRadius: Theme.cornerRadius))
+            .accessibilityElement(children: .combine)
 
             GroupedCard {
                 readinessRow("Apple silicon", detail: "\(HostInfo.chipName) · \(HostInfo.cpuCount) cores", state: HostInfo.isAppleSilicon ? .pass : .fail)
@@ -116,10 +119,12 @@ struct WelcomeView: View {
             Spacer(minLength: 12)
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: "info.circle").font(.system(size: 15)).padding(.top, 1)
+                    .accessibilityHidden(true)
                 Text("Apple’s macOS license permits up to two additional copies of macOS running in virtual machines on each Mac.")
                     .font(Theme.Font.small).lineSpacing(3)
             }
             .foregroundStyle(Theme.textTertiary)
+            .accessibilityElement(children: .combine)
         }
     }
 
@@ -131,6 +136,7 @@ struct WelcomeView: View {
                 .font(.system(size: 15))
                 .frame(width: 17)
                 .padding(.top, 1)
+                .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title).font(Theme.Font.body)
                     Text(detail).font(Theme.Font.small).foregroundStyle(Theme.textTertiary).fixedSize(horizontal: false, vertical: true)
@@ -138,6 +144,9 @@ struct WelcomeView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(detail)")
+        .accessibilityValue(state == .pass ? String(localized: "Passed") : (state == .fail ? String(localized: "Failed") : String(localized: "Warning")))
     }
 
     private func welcomeAction(_ symbol: String, title: String, detail: String, action: @escaping () -> Void) -> some View {
@@ -145,6 +154,7 @@ struct WelcomeView: View {
             HStack(spacing: 12) {
                 Image(systemName: symbol).font(.system(size: 16)).foregroundStyle(Theme.accent)
                     .frame(width: 32, height: 32).background(Theme.control, in: RoundedRectangle(cornerRadius: 8))
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.textPrimary)
                     Text(detail).font(Theme.Font.small).foregroundStyle(Theme.textTertiary)
@@ -155,6 +165,8 @@ struct WelcomeView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityHint(detail)
     }
 
     private func importVM() {

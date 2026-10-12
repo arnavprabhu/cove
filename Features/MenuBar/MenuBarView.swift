@@ -69,6 +69,7 @@ struct MenuBarView: View {
             Image(systemName: "macwindow.on.rectangle")
                 .font(.system(size: 18, weight: .medium)).foregroundStyle(Theme.accent)
                 .frame(width: 30, height: 30).background(Theme.control, in: RoundedRectangle(cornerRadius: 8))
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Cove").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.textPrimary)
                 Text(summary).font(Theme.Font.caption).foregroundStyle(Theme.textSecondary)
@@ -81,6 +82,7 @@ struct MenuBarView: View {
             }
         }
         .padding(.horizontal, 7).padding(.vertical, 7)
+        .accessibilityElement(children: .combine)
     }
 
     private var summary: String {
@@ -96,12 +98,14 @@ struct MenuBarView: View {
                 RoundedRectangle(cornerRadius: 2).fill(item.state.isLive ? Theme.accent.opacity(0.75) : Theme.control)
                     .frame(width: 18, height: 10)
             }
+            .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.name).font(Theme.Font.body).foregroundStyle(Theme.textPrimary).lineLimit(1)
                 HStack(spacing: 5) {
                     StatusDot(color: item.state.color, size: 6)
                     Text(item.state.label).font(Theme.Font.caption).foregroundStyle(Theme.textSecondary)
                 }
+                .accessibilityElement(children: .combine)
             }
             Spacer(minLength: 2)
 
@@ -130,10 +134,13 @@ struct MenuBarView: View {
                 .help("\(item.state == .suspended ? "Resume" : "Start") \(item.name)")
             } else {
                 ProgressView().controlSize(.small).frame(width: 32)
+                    .accessibilityLabel(item.state.label)
             }
         }
         .padding(.horizontal, 8).padding(.vertical, 6)
         .background(Color.primary.opacity(0.025), in: RoundedRectangle(cornerRadius: 6))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(item.name), \(item.state.label)")
     }
 
     private func menuRow(_ title: String, shortcut: String? = nil) -> some View {

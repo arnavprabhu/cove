@@ -60,9 +60,15 @@ enum SnapshotStore {
     /// Restores disk (+ memory if present). Automatically snapshots the current state first so it isn't lost.
     static func restore(_ item: VMItem, to snapshot: Snapshot, library: VMLibrary) async throws {
         guard item.session == nil else { throw CoveError.vmIsRunning }
-        try await take(item, name: "Before restoring “\(snapshot.name)”", automatic: true)
         let bundle = item.bundle
         let src = VMBundle(url: dir(bundle, snapshot.id))
+        // All-or-nothing: make sure the snapshot is complete before touching anything.
+        var needed = [src.diskURL, src.auxiliaryStorageURL]
+        if snapshot.includesMemory { needed.append(src.saveStateURL) }
+        if let missing = needed.first(where: { !FileManager.default.fileExists(atPath: $0.path) }) {
+            throw CoveError.corruptBundle("snapshot “\(snapshot.name)” is missing \(missing.lastPathComponent)")
+        }
+        try await take(item, name: "Before restoring “\(snapshot.name)”", automatic: true)
         try FileClone.clone(src.diskURL, to: bundle.diskURL)
         try FileClone.clone(src.auxiliaryStorageURL, to: bundle.auxiliaryStorageURL)
         bundle.removeSaveState()

@@ -132,13 +132,7 @@ enum GuestAccess {
         // Current location first; VMs set up by earlier builds wrote inside the (now read-only) Cove folder.
         for url in [item.bundle.guestStatusURL.appending(path: "user"),
                     item.bundle.guestFolderURL.appending(path: "status/user")] {
-            // The containing folder must be a real directory too — a planted symlinked parent is not followed.
-            var dirInfo = stat()
-            guard lstat(url.deletingLastPathComponent().path, &dirInfo) == 0, (dirInfo.st_mode & S_IFMT) == S_IFDIR else { continue }
-            var info = stat()
-            guard lstat(url.path, &info) == 0, (info.st_mode & S_IFMT) == S_IFREG, info.st_size <= 256,
-                  let raw = try? String(contentsOf: url, encoding: .utf8) else { continue }
-            if let name = sanitizedUserName(raw) { return name }
+            if let raw = readSmallGuestFile(url), let name = sanitizedUserName(raw) { return name }
         }
         return nil
     }
@@ -151,6 +145,23 @@ enum GuestAccess {
             try FileManager.default.removeItem(at: url)
         }
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+    }
+
+    /// Reads a guest-written file without races: the folder and file are opened without following links, the
+    /// opened descriptor (not the path) is checked to be a regular file, and at most 256 bytes are read.
+    nonisolated static func readSmallGuestFile(_ url: URL, limit: Int = 256) -> String? {
+        let dirFD = open(url.deletingLastPathComponent().path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        guard dirFD >= 0 else { return nil }
+        defer { close(dirFD) }
+        let fd = openat(dirFD, url.lastPathComponent, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC)
+        guard fd >= 0 else { return nil }
+        defer { close(fd) }
+        var info = stat()
+        guard fstat(fd, &info) == 0, (info.st_mode & S_IFMT) == S_IFREG else { return nil }
+        var buffer = [UInt8](repeating: 0, count: limit + 1)
+        let n = read(fd, &buffer, buffer.count)
+        guard n >= 0, n <= limit else { return nil }
+        return String(bytes: buffer[0..<n], encoding: .utf8)
     }
 
     /// macOS short names: start with a letter or underscore; letters, digits, `_`, `-`, `.`; at most 32 characters.

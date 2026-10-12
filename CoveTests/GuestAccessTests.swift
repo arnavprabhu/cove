@@ -221,3 +221,26 @@ final class HardeningTests: XCTestCase {
         XCTAssertFalse(library.isNameTaken("Agent", excluding: library.items.first?.id))
     }
 }
+
+final class GuestFileReadTests: XCTestCase {
+    func testReadsSmallRegularFilesOnly() throws {
+        let dir = FileManager.default.temporaryDirectory.appending(path: "gfr-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        try Data("testing\n".utf8).write(to: dir.appending(path: "user"))
+        XCTAssertEqual(GuestAccess.readSmallGuestFile(dir.appending(path: "user")), "testing\n")
+
+        try Data(repeating: 0x61, count: 10_000).write(to: dir.appending(path: "big"))
+        XCTAssertNil(GuestAccess.readSmallGuestFile(dir.appending(path: "big")))
+
+        try Data("secret".utf8).write(to: dir.appending(path: "target"))
+        try FileManager.default.createSymbolicLink(atPath: dir.appending(path: "link").path, withDestinationPath: "target")
+        XCTAssertNil(GuestAccess.readSmallGuestFile(dir.appending(path: "link")))
+
+        let real = dir.appending(path: "realdir")
+        try FileManager.default.createDirectory(at: real, withIntermediateDirectories: true)
+        try Data("x".utf8).write(to: real.appending(path: "user"))
+        try FileManager.default.createSymbolicLink(atPath: dir.appending(path: "linkdir").path, withDestinationPath: "realdir")
+        XCTAssertNil(GuestAccess.readSmallGuestFile(dir.appending(path: "linkdir/user")))
+    }
+}

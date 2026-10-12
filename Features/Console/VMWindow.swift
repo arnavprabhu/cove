@@ -1,4 +1,6 @@
 import AppKit
+import CoreImage
+import IOSurface
 import SwiftUI
 import Virtualization
 
@@ -26,19 +28,22 @@ struct VMWindow: View {
     var body: some View {
         Group {
             if let item {
-                ZStack {
-                    Theme.windowBackground
-                    if let session, session.state == .running || session.state == .paused {
-                        VMHostView(session: session, item: item, capturesKeys: $captureKeyboard,
-                                   releaseShortcut: releaseShortcut)
-                            .background(Color.black)
-                        if session.state == .paused { pausedOverlay(session) }
-                        if showCaptureToast && captureKeyboard { captureToast }
-                    } else {
-                        stoppedState(item)
+                VStack(spacing: 0) {
+                    ZStack {
+                        Theme.windowBackground
+                        // Keep the display up while starting, saving and shutting down so guest dialogs stay visible.
+                        if let session, session.state.isLive {
+                            VMHostView(session: session, item: item, state: session.state,
+                                       capturesKeys: $captureKeyboard, releaseShortcut: releaseShortcut)
+                                .background(Color.black)
+                            if session.state == .paused { pausedOverlay(session) }
+                            if showCaptureToast && captureKeyboard { captureToast }
+                        } else {
+                            stoppedState(item)
+                        }
                     }
+                    statusBar(item)
                 }
-                .overlay(alignment: .bottom) { statusBar(item) }
                 .navigationTitle(item.name)
                 .background(WindowTitleConfigurator(subtitle: state.label).frame(width: 0, height: 0))
                 .toolbar { consoleToolbar(item) }
@@ -212,7 +217,7 @@ struct VMWindow: View {
         .font(.system(size: 10.5, design: .rounded).monospacedDigit())
         .foregroundStyle(Theme.textSecondary)
         .padding(.horizontal, 14).frame(height: 30)
-        .background(Theme.toolbar.opacity(0.96))
+        .background(Theme.toolbar)
         .overlay(alignment: .top) { Rectangle().fill(Theme.separator).frame(height: 1) }
         .lineLimit(1)
     }
@@ -288,6 +293,7 @@ struct VMWindow: View {
 private struct VMHostView: NSViewRepresentable {
     var session: VMSession
     var item: VMItem
+    var state: VMState
     @Binding var capturesKeys: Bool
     var releaseShortcut: String
 
@@ -318,13 +324,22 @@ private struct VMHostView: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: HostContainer, context: Context) {
-        context.coordinator.item = item
-        context.coordinator.vmView?.capturesSystemKeys = capturesKeys
-        context.coordinator.beginMonitoring(enabled: capturesKeys, shortcut: releaseShortcut)
+        let coordinator = context.coordinator
+        coordinator.item = item
+        // Grab the last frame as the guest leaves the running state (suspend / shut down), while it's still on screen.
+        if coordinator.lastState == .running, state == .saving || state == .stopping || state == .paused {
+            coordinator.captureThumbnail()
+        }
+        coordinator.lastState = state
+        coordinator.vmView?.capturesSystemKeys = capturesKeys
+        if capturesKeys, let vmView = coordinator.vmView {
+            DispatchQueue.main.async { vmView.window?.makeFirstResponder(vmView) }
+        }
+        coordinator.beginMonitoring(enabled: capturesKeys, shortcut: releaseShortcut)
     }
 
     static func dismantleNSView(_ nsView: HostContainer, coordinator: Coordinator) {
-        coordinator.captureThumbnail()
+        if coordinator.vmView?.virtualMachine?.state == .running { coordinator.captureThumbnail() }
         coordinator.endMonitoring()
     }
 
@@ -333,12 +348,20 @@ private struct VMHostView: NSViewRepresentable {
             if newWindow == nil { capture?() }
             super.viewWillMove(toWindow: newWindow)
         }
+        /// Runs when the window closes while the guest is still running.
         var capture: (() -> Void)?
     }
 
     @MainActor final class Coordinator {
         var item: VMItem
-        weak var host: HostContainer? { didSet { host?.capture = { [weak self] in self?.captureThumbnail() } } }
+        weak var host: HostContainer? {
+            didSet {
+                host?.capture = { [weak self] in
+                    if self?.vmView?.virtualMachine?.state == .running { self?.captureThumbnail() }
+                }
+            }
+        }
+        var lastState: VMState = .stopped
         weak var vmView: VZVirtualMachineView?
         var release: (() -> Void)?
         private var monitor: Any?
@@ -367,22 +390,46 @@ private struct VMHostView: NSViewRepresentable {
         }
 
         func captureThumbnail() {
-            guard let view = vmView, let window = view.window else { return }
-            var image: NSImage?
-            if view.bounds.width > 0, view.bounds.height > 0,
+            guard let view = vmView, view.window != nil else { return }
+            var image = Self.surfaceImage(in: view)
+            if image == nil, view.bounds.width > 0, view.bounds.height > 0,
                let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) {
                 view.cacheDisplay(in: view.bounds, to: rep)
-                let candidate = NSImage(size: view.bounds.size)
-                candidate.addRepresentation(rep)
-                if rep.pixelsWide > 0 && rep.pixelsHigh > 0 && !Self.isBlank(rep) { image = candidate }
-            }
-            if image == nil {
-                let rect = window.convertToScreen(view.convert(view.bounds, to: nil))
-                if let cgImage = CGWindowListCreateImage(rect, .optionIncludingWindow, CGWindowID(window.windowNumber), [.bestResolution]) {
-                    image = NSImage(cgImage: cgImage, size: rect.size)
+                if rep.pixelsWide > 0, rep.pixelsHigh > 0, !Self.isBlank(rep) {
+                    let candidate = NSImage(size: view.bounds.size)
+                    candidate.addRepresentation(rep)
+                    image = candidate
                 }
             }
-            if let image { item.bundle.writeThumbnail(image); item.refresh() }
+            guard let image else { return }
+            item.bundle.writeThumbnail(Self.downscaled(image, maxWidth: 1280))
+            item.refresh()
+        }
+
+        /// VZVirtualMachineView draws into an IOSurface-backed layer; `cacheDisplay` can't see it, so read the surface.
+        private static func surfaceImage(in view: NSView) -> NSImage? {
+            var queue = [view.layer].compactMap { $0 }
+            while !queue.isEmpty {
+                let layer = queue.removeFirst()
+                if let contents = layer.contents, CFGetTypeID(contents as CFTypeRef) == IOSurfaceGetTypeID() {
+                    let surface = unsafeBitCast(contents as AnyObject, to: IOSurface.self)
+                    let ci = CIImage(ioSurface: surface)
+                    if let cg = CIContext().createCGImage(ci, from: ci.extent) {
+                        return NSImage(cgImage: cg, size: NSSize(width: cg.width, height: cg.height))
+                    }
+                }
+                queue += layer.sublayers ?? []
+            }
+            return nil
+        }
+
+        private static func downscaled(_ image: NSImage, maxWidth: CGFloat) -> NSImage {
+            guard image.size.width > maxWidth else { return image }
+            let size = NSSize(width: maxWidth, height: (image.size.height * maxWidth / image.size.width).rounded())
+            return NSImage(size: size, flipped: false) { rect in
+                image.draw(in: rect)
+                return true
+            }
         }
 
         private static func isBlank(_ rep: NSBitmapImageRep) -> Bool {

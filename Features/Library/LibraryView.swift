@@ -44,8 +44,12 @@ struct LibraryView: View {
             }
         case .restoreImages:
             RestoreImagesDetailView()
+                .navigationTitle("Restore Images")
+                .navigationSubtitle("Cached macOS installers")
         case .sharedFolders:
             SharedFoldersDetailView()
+                .navigationTitle("Shared Folders")
+                .navigationSubtitle("Folders shared into your VMs")
         case nil:
             ContentUnavailableView("Select a Virtual Machine", systemImage: "macwindow",
                                    description: Text("Choose a VM from the sidebar to see its details."))

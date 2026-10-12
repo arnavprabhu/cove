@@ -54,6 +54,8 @@ struct VMDetailView: View {
             .padding(.vertical, 26)
         }
         .background(Theme.windowBackground)
+        .navigationTitle(item.name)
+        .navigationSubtitle(item.osDescription)
         .toolbar { detailToolbar }
         .alert("Take Snapshot", isPresented: $showSnapshotPrompt) {
             TextField("Name", text: $snapshotName)
@@ -254,15 +256,6 @@ struct VMDetailView: View {
 
     @ToolbarContentBuilder
     private var detailToolbar: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
-            VStack(alignment: .leading, spacing: 1) {
-                Text(item.name)
-                    .font(.system(size: 15, weight: .bold))
-                Text(item.osDescription)
-                    .font(Theme.Font.caption)
-                    .foregroundStyle(Theme.textTertiary)
-            }
-        }
         ToolbarItemGroup(placement: .primaryAction) {
             Button {
                 VMActions.performPrimary(for: item, library: library,

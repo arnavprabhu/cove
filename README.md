@@ -38,6 +38,15 @@ OUT=~/Library/Containers/app.cove.Cove/Data/tmp/render   # sandboxed app can onl
 $APP -coveRender $OUT    # Debug builds: renders each screen with sample data, dark + light, to PNGs
 ```
 
+### App icon
+
+The icon is drawn in code — `swift scripts/make-icon.swift out.png [size]` — so it stays crisp at every size.
+Regenerate all sizes into `Resources/Assets.xcassets/AppIcon.appiconset` with:
+
+```sh
+for s in 16 32 64 128 256 512 1024; do swift scripts/make-icon.swift Resources/Assets.xcassets/AppIcon.appiconset/icon_$s.png $s; done
+```
+
 ## Keyboard
 
 | Action | Shortcut |

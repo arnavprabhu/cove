@@ -308,6 +308,7 @@ struct AppSettingsView: View {
 
         settingsBlock("Cove") {
             HStack(alignment: .center, spacing: 12) {
+                CoveLogo(size: 52)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Version \(version)")
                     Text(upToDateMessage ?? "Cove is up to date")

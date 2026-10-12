@@ -13,13 +13,7 @@ struct WelcomeView: View {
         HStack(spacing: 0) {
             VStack(spacing: 0) {
                 Spacer()
-                Image(systemName: "macwindow")
-                    .font(.system(size: 62, weight: .regular))
-                    .foregroundStyle(Theme.accent)
-                    .frame(width: 112, height: 112)
-                    .background(Theme.control, in: RoundedRectangle(cornerRadius: 26))
-                    .overlay(RoundedRectangle(cornerRadius: 26).strokeBorder(Theme.cellBorder))
-                    .accessibilityHidden(true)
+                CoveLogo(size: 140)
                 Text("Welcome to Cove")
                     .font(Theme.Font.largeTitle)
                     .padding(.top, 24)

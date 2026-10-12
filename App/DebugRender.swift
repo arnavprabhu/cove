@@ -55,6 +55,10 @@ enum DebugRender {
             }
         }
         try? FileManager.default.removeItem(at: root)
+        if let icon = NSApp.applicationIconImage, let tiff = icon.tiffRepresentation,
+           let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) {
+            try? png.write(to: out.appending(path: "00-AppIcon.png"))
+        }
     }
 
     private static func snapshot(_ view: some View, size: CGSize, appearance: NSAppearance.Name, to url: URL) {

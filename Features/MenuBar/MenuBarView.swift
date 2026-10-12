@@ -66,10 +66,7 @@ struct MenuBarView: View {
 
     private var header: some View {
         HStack(spacing: 10) {
-            Image(systemName: "macwindow.on.rectangle")
-                .font(.system(size: 18, weight: .medium)).foregroundStyle(Theme.accent)
-                .frame(width: 30, height: 30).background(Theme.control, in: RoundedRectangle(cornerRadius: 8))
-                .accessibilityHidden(true)
+            CoveLogo(size: 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Cove").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.textPrimary)
                 Text(summary).font(Theme.Font.caption).foregroundStyle(Theme.textSecondary)

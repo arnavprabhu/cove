@@ -63,17 +63,21 @@ struct NewVMView: View {
                 LowDiskSpaceBanner(available: available).padding(.horizontal, 24).padding(.top, 14)
             }
             stepIndicator.padding(.top, 18)
-            Group {
-                if step == 1 { sourceStep } else { customizeStep }
+            // Scrolls when the window is short, so the title and buttons are never pushed out of view.
+            ScrollView {
+                Group {
+                    if step == 1 { sourceStep } else { customizeStep }
+                }
+                .frame(maxWidth: .infinity, alignment: .top)
+                .padding(.horizontal, 32)
+                .padding(.vertical, 20)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.horizontal, 32)
-            .padding(.vertical, 20)
+            .scrollBounceBehavior(.basedOnSize)
 
             footer
         }
         .background(Theme.windowBackground)
-        .frame(minWidth: 860, minHeight: 680)
+        .frame(minWidth: 860, idealWidth: 900, minHeight: 420, idealHeight: 700)
         .onAppear {
             purpose = initialPurpose
             if name.isEmpty { name = library.uniqueName(purpose.defaultName) }
@@ -121,7 +125,9 @@ struct NewVMView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Name").font(Theme.Font.small).foregroundStyle(Theme.textSecondary)
-                            TextField("Virtual machine name", text: Binding(get: { name }, set: { name = $0; nameEdited = true }))
+                            TextField("Virtual machine name", text: Binding(get: { name }, set: { new in
+                                if new != name { name = new; nameEdited = true }
+                            }))
                                 .textFieldStyle(.roundedBorder)
                         }
                         HStack {

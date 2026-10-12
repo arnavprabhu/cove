@@ -41,8 +41,14 @@ struct SnapshotsView: View {
         .frame(minWidth: 900, minHeight: 560)
         .background(Theme.windowBackground)
         .coveAlert($alert)
+        .focusedSceneValue(\.focusedVMID, vmID)
         .onAppear { ensureSelection() }
         .onChange(of: snapshots.map(\.id)) { _, _ in ensureSelection() }
+        .onReceive(NotificationCenter.default.publisher(for: .coveTakeSnapshot)) { note in
+            guard (note.object as? UUID) == vmID else { return }
+            takeName = defaultName()
+            showTakePrompt = true
+        }
     }
 
     @ViewBuilder
@@ -99,6 +105,7 @@ struct SnapshotsView: View {
                 Image(systemName: "chevron.left")
             }
             .buttonStyle(.borderless)
+            .help("Back")
             .accessibilityLabel("Back")
 
             VStack(alignment: .leading, spacing: 1) {
@@ -169,6 +176,7 @@ struct SnapshotsView: View {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "info.circle")
                         .font(.system(size: 14))
+                        .accessibilityHidden(true)
                     Text("Snapshots are instant APFS clones, so each one only stores what changed after it.")
                         .font(Theme.Font.small)
                         .foregroundStyle(Theme.textSecondary)
@@ -176,6 +184,7 @@ struct SnapshotsView: View {
                 }
                 .padding(12)
                 .background(Theme.cell, in: RoundedRectangle(cornerRadius: 10))
+                .accessibilityElement(children: .combine)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 20)
@@ -228,6 +237,19 @@ struct SnapshotsView: View {
             .foregroundStyle(Theme.textPrimary)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityLabel(timelineAccessibilityLabel(title: title, subtitle: subtitle, size: size,
+                                                       includesMemory: includesMemory, automatic: automatic))
+    }
+
+    private func timelineAccessibilityLabel(title: String, subtitle: String, size: String?,
+                                            includesMemory: Bool, automatic: Bool) -> String {
+        var parts = [title, subtitle]
+        if includesMemory { parts.append(String(localized: "includes memory")) }
+        if automatic { parts.append(String(localized: "automatic")) }
+        if let size { parts.append(size) }
+        return parts.joined(separator: ", ")
     }
 
     private func timelineNode(isNow: Bool, selected: Bool) -> some View {
@@ -245,6 +267,7 @@ struct SnapshotsView: View {
                 .frame(width: 8, height: 8)
         }
         .frame(width: 22, height: 22)
+        .accessibilityHidden(true)
     }
 
     // MARK: - Detail
@@ -335,6 +358,7 @@ struct SnapshotsView: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "exclamationmark.triangle")
                 .foregroundStyle(Theme.warning)
+                .accessibilityHidden(true)
             Text(text)
                 .font(Theme.Font.small)
                 .foregroundStyle(Color(light: 0x9A6700, dark: 0xFFD18A))
@@ -345,6 +369,7 @@ struct SnapshotsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.warning.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
         .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.warning.opacity(0.3)))
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Actions

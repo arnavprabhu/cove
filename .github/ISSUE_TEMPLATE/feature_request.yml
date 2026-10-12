@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest an idea or something Cove should do better.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the task or workflow (for example, running an agent, testing an app, an automation).
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: How you'd like Cove to handle it. Mockups and examples are welcome.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What do you do today instead?

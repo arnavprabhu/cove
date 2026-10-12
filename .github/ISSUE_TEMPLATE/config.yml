@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/arnavprabhu/cove/discussions
+    about: Ask how to do something, share a workflow, or float an idea.
+  - name: Report a security problem privately
+    url: https://github.com/arnavprabhu/cove/security/advisories/new
+    about: Please don't open a public issue for security problems.
+  - name: Guides and troubleshooting
+    url: https://github.com/arnavprabhu/cove/tree/main/docs#readme
+    about: Getting started, SSH & agents, personal assistants, and common fixes.

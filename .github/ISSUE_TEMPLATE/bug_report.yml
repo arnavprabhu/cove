@@ -1,0 +1,68 @@
+name: Bug report
+description: Something in Cove doesn't work the way it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Please don't include passwords, keys or other private data.
+        **Security problems** (for example, a VM reaching your Mac in a way it shouldn't): please use
+        [private vulnerability reporting](https://github.com/arnavprabhu/cove/security/advisories/new) instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+      placeholder: "I clicked Resume on a suspended VM and…"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Create a VM with the Agent sandbox purpose
+        2. …
+  - type: input
+    id: cove-version
+    attributes:
+      label: Cove version
+      description: Cove ▸ Settings ▸ Updates, or `brew info --cask cove`.
+      placeholder: "0.1.0 (1)"
+    validations:
+      required: true
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS on your Mac
+      placeholder: "macOS 15.4"
+    validations:
+      required: true
+  - type: input
+    id: mac
+    attributes:
+      label: Mac model / chip
+      placeholder: "MacBook Pro, M3 Pro"
+  - type: input
+    id: guest
+    attributes:
+      label: macOS inside the VM (if relevant)
+      placeholder: "macOS 15.4"
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Creating / installing a VM
+        - Running a VM (console window)
+        - Snapshots
+        - SSH & Agent Access
+        - Library / settings
+        - Menu bar
+        - Installing Cove (Homebrew, first launch)
+        - Other
+  - type: textarea
+    id: logs
+    attributes:
+      label: Screenshots or logs
+      description: Drag screenshots in, or paste error messages.

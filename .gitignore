@@ -11,3 +11,6 @@ dist/
 
 # Design mockups — kept locally, not published
 design/
+
+# Launch video project, footage, and renders — local only
+launch-video/

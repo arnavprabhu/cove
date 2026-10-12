@@ -26,8 +26,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.cove.Cove
         PRODUCT_NAME: Cove
-        MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "0.1.1"
+        CURRENT_PROJECT_VERSION: "2"
         INFOPLIST_FILE: Resources/Info.plist
         CODE_SIGN_ENTITLEMENTS: Resources/Cove.entitlements
         CODE_SIGN_IDENTITY: "-"

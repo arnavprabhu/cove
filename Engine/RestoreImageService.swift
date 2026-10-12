@@ -68,8 +68,14 @@ final class RestoreImageDownloader: NSObject, URLSessionDownloadDelegate, @unche
         }
     }
 
+    /// Progress callbacks arrive many times a second; the UI only needs a few.
+    private var lastReport = Date.distantPast
+
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData _: Int64,
                     totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        let now = Date()
+        guard now.timeIntervalSince(lastReport) >= 0.2 || totalBytesWritten == totalBytesExpectedToWrite else { return }
+        lastReport = now
         let cb = onProgress
         Task { @MainActor in cb(totalBytesWritten, totalBytesExpectedToWrite) }
     }

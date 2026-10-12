@@ -79,6 +79,7 @@ final class VMInstallJob: Identifiable {
     private var downloader: RestoreImageDownloader?
     private var progressObservation: NSKeyValueObservation?
     private var rateSampler = RateSampler()
+    private var lastInstallReport = Date.distantPast
 
     init(request: Request, library: VMLibrary) {
         self.request = request
@@ -118,6 +119,18 @@ final class VMInstallJob: Identifiable {
         job.bytesExpected = 27_000_000_000
         job.bytesReceived = 16_740_000_000
         job.status = .failed("The connection to Apple was lost.", resumable: true)
+        return job
+    }
+
+    /// A download in progress, for the PNG render harness.
+    static func downloadingSample(in library: VMLibrary) -> VMInstallJob {
+        let job = VMInstallJob(request: Request(name: "Agent Sandbox", cpuCount: 4, memoryBytes: Bytes.gb(8),
+                                               diskBytes: Bytes.gb(80)), library: library)
+        job.stage = .download
+        job.stageProgress = 0.04
+        job.bytesExpected = 26_640_000_000
+        job.bytesReceived = 935_200_000
+        job.estimatedSecondsRemaining = 360
         return job
     }
     #endif
@@ -274,6 +287,9 @@ final class VMInstallJob: Identifiable {
     }
 
     private func updateInstall(_ fraction: Double) {
+        let now = Date()
+        guard now.timeIntervalSince(lastInstallReport) >= 0.2 || fraction >= 1 else { return }
+        lastInstallReport = now
         stageProgress = fraction
         estimatedSecondsRemaining = rateSampler.estimate(progress: fraction)
     }

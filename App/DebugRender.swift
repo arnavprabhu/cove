@@ -26,6 +26,7 @@ enum DebugRender {
         let first = makeSampleVMs(in: sample)
         let lowDisk = DiskSpaceMonitor(available: 12_000_000_000)
         let failedDownload = sample.addFailedDownloadSample()
+        let downloading = sample.addDownloadingSample()
         let remote = VMLibrary(rootURL: root.appending(path: "remote"))
         let remoteID = makeSampleVMs(in: remote)
         if let item = remote.item(id: remoteID) {
@@ -67,6 +68,8 @@ enum DebugRender {
              ], onCancel: {}, onStart: { _ in }).frame(maxWidth: .infinity, maxHeight: .infinity).background(Theme.windowBackground))),
             ("13-Library-lowdisk", CGSize(width: 1200, height: 760), sample, AnyView(LibraryView(diskSpace: lowDisk))),
             ("14-NewVM-lowdisk", CGSize(width: 1000, height: 680), sample, AnyView(NewVMView(diskSpace: lowDisk))),
+            ("15b-Install-downloading", CGSize(width: 1200, height: 760), sample,
+             AnyView(InstallProgressView(jobID: downloading.id))),
             ("15-Install-downloadFailed", CGSize(width: 1000, height: 680), sample,
              AnyView(InstallProgressView(jobID: failedDownload.id, diskSpace: lowDisk))),
             ("16-Remote-off", CGSize(width: 760, height: 640), sample,

@@ -41,10 +41,11 @@ struct InstallProgressView: View {
                                         onUseFile: { useRestoreFile(job) }, onResume: { retry(job) })
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    content(job)
+                    content(job).frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             } else {
                 ContentUnavailableView("Installation not found", systemImage: "exclamationmark.triangle", description: Text("This installation may have finished or been removed."))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             footer
         }
@@ -80,7 +81,7 @@ struct InstallProgressView: View {
                     .accessibilityHidden(true)
                 VStack(spacing: 6) {
                     Text(headline(job)).font(.system(size: 23, weight: .bold)).multilineTextAlignment(.center)
-                    Text(detail(job)).font(.system(size: 13)).foregroundStyle(Theme.textSecondary).multilineTextAlignment(.center)
+                    Text(detail(job)).font(.system(size: 13)).monospacedDigit().foregroundStyle(Theme.textSecondary).multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.top, 4)

@@ -371,6 +371,12 @@ final class VMLibrary {
         installJobs.append(job)
         return job
     }
+
+    func addDownloadingSample() -> VMInstallJob {
+        let job = VMInstallJob.downloadingSample(in: self)
+        installJobs.append(job)
+        return job
+    }
     #endif
 
     func installJob(id: UUID) -> VMInstallJob? { installJobs.first { $0.id == id } }

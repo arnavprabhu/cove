@@ -69,6 +69,12 @@ final class VMInstallJob: Identifiable {
     var isFinished: Bool { status != .running }
 
     private weak var library: VMLibrary?
+    /// The installer's VM while macOS is being written; counts toward the two-guest limit.
+    private(set) var installerVM: VZVirtualMachine?
+    /// Set once macOS is on the disk. From then on the VM is kept no matter what happens next.
+    private(set) var installed = false
+    /// Why the optional first boot didn't happen (the VM itself is fine).
+    private(set) var firstBootMessage: String?
     private var task: Task<Void, Never>?
     private var downloader: RestoreImageDownloader?
     private var progressObservation: NSKeyValueObservation?
@@ -88,16 +94,18 @@ final class VMInstallJob: Identifiable {
     func retry(using file: URL? = nil) {
         guard case .failed = status else { return }
         if let file { request.source = .file(file) }
+        installed = false
+        firstBootMessage = nil
         run()
     }
 
+    /// Stops the job. Partial files are removed by the pipeline itself once the installer has actually stopped —
+    /// deleting them here would pull the disk out from under a running installer.
     func cancel() {
+        guard status == .running else { return }
+        status = .cancelled
         downloader?.cancel()
         task?.cancel()
-        status = .cancelled
-        if let id = vmID, let lib = library, let item = lib.item(id: id), item.installJob === self {
-            lib.discard(item)
-        }
     }
 
     #if DEBUG
@@ -154,10 +162,12 @@ final class VMInstallJob: Identifiable {
                   requirements.hardwareModel.isSupported else { throw CoveError.restoreImageUnsupported }
             stageProgress = 1
 
-            // 3. Install
+            // 3. Install — the installer runs a macOS guest, so it needs one of the two slots.
             enter(.install)
+            guard library.canStartAnother else { throw CoveError.licenseLimit }
             let item = try createBundle(requirements: requirements, library: library)
             let session = try VMSession(bundle: item.bundle, config: item.config)
+            installerVM = session.virtualMachine
             let installer = VZMacOSInstaller(virtualMachine: session.virtualMachine, restoringFromImageAt: ipsw)
             rateSampler = RateSampler()
             progressObservation = installer.progress.observe(\.fractionCompleted, options: [.new]) { [weak self] p, _ in
@@ -171,6 +181,8 @@ final class VMInstallJob: Identifiable {
             }
             progressObservation = nil
             if session.virtualMachine.canStop { try? await session.virtualMachine.stop() }
+            installerVM = nil
+            installed = true
             item.installJob = nil
 
             if request.snapshotAfterInstall {
@@ -180,34 +192,45 @@ final class VMInstallJob: Identifiable {
                 try? FileManager.default.removeItem(at: ipsw)
             }
 
-            // 4. First boot
+            // 4. First boot — optional. If it can't happen now (e.g. two VMs already running), keep the VM.
             enter(.firstBoot)
             if request.startAfterInstall {
-                try await library.start(item)
-                onReadyToBoot?(item)
+                do {
+                    try await library.start(item)
+                    onReadyToBoot?(item)
+                } catch {
+                    firstBootMessage = error.localizedDescription
+                }
             }
             stageProgress = 1
             enter(.done)
             status = .finished
             library.noteStorageChanged()
             InstallNotifier.postReady(vmName: item.name, vmID: item.id)
-        } catch is CancellationError {
-            status = .cancelled
-        } catch CoveError.cancelled {
-            status = .cancelled
         } catch {
             progressObservation = nil
+            await cleanUpAfterStop(library: library)
             // cancel() already set the status; the installer reports cancellation as an NSError.
-            if status == .cancelled { return }
+            if status == .cancelled || error is CancellationError || (error as? CoveError) == .cancelled {
+                status = .cancelled
+                return
+            }
             let resumable: Bool
             if case CoveError.downloadFailed(_, let r) = error { resumable = r } else { resumable = false }
-            if stage >= .install, let id = vmID, let item = library.item(id: id) {
-                library.discard(item)
-                vmID = nil
-            }
             status = .failed(error.localizedDescription, resumable: resumable)
             InstallNotifier.postFailed(vmName: request.name, message: error.localizedDescription)
         }
+    }
+
+    /// After a failure or cancel: stop the installer VM first, then remove a VM that never finished installing.
+    private func cleanUpAfterStop(library: VMLibrary) async {
+        if let vm = installerVM {
+            if vm.canStop { try? await vm.stop() }
+            installerVM = nil
+        }
+        guard !installed, let id = vmID, let item = library.item(id: id) else { return }
+        library.discard(item)
+        vmID = nil
     }
 
     private func createBundle(requirements: VZMacOSConfigurationRequirements, library: VMLibrary) throws -> VMItem {

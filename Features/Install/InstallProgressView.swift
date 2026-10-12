@@ -174,6 +174,9 @@ struct InstallProgressView: View {
     private func detail(_ job: VMInstallJob) -> String {
         if case .failed(let message, _) = job.status { return message }
         if isCancelled { return "You can close this window." }
+        if isFinished, let why = job.firstBootMessage {
+            return "macOS installed. It didn’t start automatically: \(why)"
+        }
         if isFinished { return "macOS installed. Open it to finish Setup Assistant." }
         switch job.stage {
         case .check: return "Making sure this Mac is ready to install macOS"

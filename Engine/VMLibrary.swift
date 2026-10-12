@@ -129,7 +129,10 @@ final class VMLibrary {
 
     var liveItems: [VMItem] { items.filter { $0.state.isLive } }
 
-    var canStartAnother: Bool { liveItems.count < Self.maxRunningMacOSGuests }
+    /// Running guests plus installers that are writing macOS (each installer runs a guest too).
+    var runningGuestCount: Int { liveItems.count + installJobs.filter { $0.installerVM != nil }.count }
+
+    var canStartAnother: Bool { runningGuestCount < Self.maxRunningMacOSGuests }
 
     /// Starts (or resumes from suspend) a VM. Throws `CoveError.licenseLimit` if two are already running.
     func start(_ item: VMItem, recovery: Bool = false) async throws {

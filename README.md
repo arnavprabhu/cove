@@ -16,6 +16,7 @@ macOS, right on your desktop.
 [![Swift](https://img.shields.io/badge/Swift-SwiftUI-F05138?logo=swift&logoColor=white)](#build-from-source)
 [![Virtualization.framework](https://img.shields.io/badge/Virtualization.framework-native-5E5CE6)](#how-it-works)
 [![Homebrew cask](https://img.shields.io/badge/Homebrew-cask-FBB040?logo=homebrew&logoColor=black)](#install)
+[![License: MIT](https://img.shields.io/badge/License-MIT-3DA639)](LICENSE)
 
 [Install](#install) · [Quick start](#quick-start) · [Connect your agents](#connect-your-agents) ·
 [Safety model](#safety-model) · [FAQ](#faq) · [Docs](docs/README.md)
@@ -510,4 +511,4 @@ Cove is built entirely on Apple's [Virtualization.framework](https://developer.a
 SwiftUI and AppKit, and uses [XcodeGen](https://github.com/yonaskolb/XcodeGen) to generate its Xcode project.
 macOS is © Apple Inc. and is downloaded directly from Apple; use it in accordance with Apple's macOS license.
 
-**License:** not yet chosen — this repository doesn't include a LICENSE file yet.
+**License:** [MIT](LICENSE) © 2026 Arnav Prabhu.

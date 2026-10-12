@@ -15,10 +15,12 @@ import Network
 @MainActor
 enum GuestAccess {
     nonisolated static let shareName = "Cove"
+    /// The guest-writable share (setup.sh reports the user name here). Everything else the guest sees is read-only.
+    nonisolated static let statusShareName = "Cove Status"
     nonisolated static let guestFolderPath = "/Volumes/My Shared Files/\(shareName)"
     nonisolated static let setupCommand = #"sh "/Volumes/My Shared Files/Cove/setup.sh""#
     nonisolated static let keyName = "cove_ed25519"
-    nonisolated static let leasesPath = "/var/db/dhcpd_leases"
+    nonisolated static let leasesPath = "/private/var/db/dhcpd_leases"
 
     // MARK: Naming
 
@@ -61,8 +63,8 @@ enum GuestAccess {
     static func prepareGuestFolder(for item: VMItem, library: VMLibrary) throws {
         let pubKey = try ensureKeyPair(in: library)
         let dir = item.bundle.guestFolderURL
-        let fm = FileManager.default
-        try fm.createDirectory(at: dir.appending(path: "status"), withIntermediateDirectories: true)
+        try ensureRealDirectory(dir)
+        try ensureRealDirectory(item.bundle.guestStatusURL)
         try (pubKey + "\n").write(to: dir.appending(path: "\(keyName).pub"), atomically: true, encoding: .utf8)
         try setupScript(alias: alias(for: item.name), passwordlessSudo: item.config.access.passwordlessSudo)
             .write(to: dir.appending(path: "setup.sh"), atomically: true, encoding: .utf8)
@@ -105,9 +107,9 @@ enum GuestAccess {
 
         sudo scutil --set LocalHostName "\(alias)" 2>/dev/null || true
 
-        mkdir -p "$DIR/status"
-        echo "$ME" > "$DIR/status/user"
-        date -u +%Y-%m-%dT%H:%M:%SZ > "$DIR/status/configured"
+        STATUS="/Volumes/My Shared Files/\(statusShareName)"
+        echo "$ME" > "$STATUS/user"
+        date -u +%Y-%m-%dT%H:%M:%SZ > "$STATUS/configured"
         echo "Cove: done. Your Mac can now connect with: ssh \(alias)"
         """
     }
@@ -127,11 +129,25 @@ enum GuestAccess {
     /// The guest is untrusted: this file is written from inside the VM. Only a plain regular file holding a valid
     /// macOS short user name is accepted — anything else could inject directives into the host's ssh config.
     static func guestUser(for item: VMItem) -> String? {
-        let url = item.bundle.guestFolderURL.appending(path: "status/user")
+        // Current location first; VMs set up by earlier builds wrote inside the (now read-only) Cove folder.
+        for url in [item.bundle.guestStatusURL.appending(path: "user"),
+                    item.bundle.guestFolderURL.appending(path: "status/user")] {
+            var info = stat()
+            guard lstat(url.path, &info) == 0, (info.st_mode & S_IFMT) == S_IFREG, info.st_size <= 256,
+                  let raw = try? String(contentsOf: url, encoding: .utf8) else { continue }
+            if let name = sanitizedUserName(raw) { return name }
+        }
+        return nil
+    }
+
+    /// Makes `url` a real directory inside its bundle: a symlink (e.g. planted by a crafted import) is removed
+    /// rather than followed, so shares can never point anywhere else on the Mac.
+    nonisolated static func ensureRealDirectory(_ url: URL) throws {
         var info = stat()
-        guard lstat(url.path, &info) == 0, (info.st_mode & S_IFMT) == S_IFREG, info.st_size <= 256,
-              let raw = try? String(contentsOf: url, encoding: .utf8) else { return nil }
-        return sanitizedUserName(raw)
+        if lstat(url.path, &info) == 0, (info.st_mode & S_IFMT) != S_IFDIR {
+            try FileManager.default.removeItem(at: url)
+        }
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     }
 
     /// macOS short names: start with a letter or underscore; letters, digits, `_`, `-`, `.`; at most 32 characters.
@@ -333,9 +349,19 @@ enum GuestAccess {
         let userConfig = sshDir.appending(path: "config")
         let include = "Include ~/.ssh/cove/config"
         let existing = (try? String(contentsOf: userConfig, encoding: .utf8)) ?? ""
-        guard !existing.contains(include) else { return }
+        guard !hasInclude(existing) else { return }
         try ("# Added by Cove (virtual machines)\n\(include)\n\n" + existing).write(to: userConfig, atomically: true, encoding: .utf8)
         try fm.setAttributes([.posixPermissions: 0o600], ofItemAtPath: userConfig.path)
+    }
+}
+
+extension GuestAccess {
+    /// True if `config` has an active (uncommented) `Include ~/.ssh/cove/config` line.
+    nonisolated static func hasInclude(_ config: String) -> Bool {
+        config.split(whereSeparator: \.isNewline).contains { line in
+            let words = line.trimmingCharacters(in: .whitespaces).split(whereSeparator: { $0 == " " || $0 == "\t" || $0 == "=" })
+            return words.count == 2 && words[0].lowercased() == "include" && words[1] == "~/.ssh/cove/config"
+        }
     }
 }
 

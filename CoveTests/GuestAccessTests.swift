@@ -101,7 +101,8 @@ final class GuestAccessTests: XCTestCase {
         let off = GuestAccess.setupScript(alias: "cove-x", passwordlessSudo: false)
         XCTAssertFalse(off.contains("NOPASSWD"))
         XCTAssertTrue(off.contains("rm -f /etc/sudoers.d/cove"))
-        XCTAssertTrue(off.contains(#"echo "$ME" > "$DIR/status/user""#))
+        XCTAssertTrue(off.contains(#"echo "$ME" > "$STATUS/user""#))
+        XCTAssertTrue(off.contains(#"STATUS="/Volumes/My Shared Files/Cove Status""#))
     }
 
     func testSetupScriptIsValidShell() throws {
@@ -163,5 +164,60 @@ final class FileCloneTests: XCTestCase {
         XCTAssertThrowsError(try FileClone.clone(dir.appending(path: "missing"), to: dst))
         XCTAssertEqual(try String(contentsOf: dst, encoding: .utf8), "new")
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: dir.path).sorted(), ["dst", "src"])
+    }
+}
+
+@MainActor
+final class HardeningTests: XCTestCase {
+    private func tempDir() throws -> URL {
+        let dir = FileManager.default.temporaryDirectory.appending(path: "cove-hard-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: dir) }
+        return dir
+    }
+
+    func testIncludeDetectionIgnoresComments() {
+        XCTAssertTrue(GuestAccess.hasInclude("Include ~/.ssh/cove/config\nHost x\n"))
+        XCTAssertTrue(GuestAccess.hasInclude("  include   ~/.ssh/cove/config"))
+        XCTAssertFalse(GuestAccess.hasInclude("# Include ~/.ssh/cove/config"))
+        XCTAssertFalse(GuestAccess.hasInclude("Include ~/.ssh/cove/config.old"))
+        XCTAssertFalse(GuestAccess.hasInclude(""))
+    }
+
+    func testSymlinkedShareRootIsReplacedNotFollowed() throws {
+        let dir = try tempDir()
+        let secret = dir.appending(path: "secret")
+        try FileManager.default.createDirectory(at: secret, withIntermediateDirectories: true)
+        try Data("key".utf8).write(to: secret.appending(path: "id"))
+        let share = dir.appending(path: "Guest")
+        try FileManager.default.createSymbolicLink(at: share, withDestinationURL: secret)
+        try GuestAccess.ensureRealDirectory(share)
+        let attrs = try FileManager.default.attributesOfItem(atPath: share.path)
+        XCTAssertEqual(attrs[.type] as? FileAttributeType, .typeDirectory)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: secret.appending(path: "id").path), "target untouched")
+    }
+
+    func testImportRefusesBundlesContainingSymlinks() throws {
+        let dir = try tempDir()
+        let bundle = dir.appending(path: "Evil.cove")
+        try FileManager.default.createDirectory(at: bundle.appending(path: "Snapshots/x"), withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(atPath: bundle.appending(path: "Snapshots/x/Disk.img").path,
+                                                   withDestinationPath: "../../../SSH/cove_ed25519")
+        XCTAssertEqual(VMLibrary.firstSymlink(in: bundle), "Snapshots/x/Disk.img")
+        let library = VMLibrary(rootURL: dir.appending(path: "lib"))
+        XCTAssertThrowsError(try library.importVM(from: bundle))
+    }
+
+    func testNamesThatCollideAsSSHAliasesAreNotUnique() throws {
+        let dir = try tempDir()
+        let library = VMLibrary(rootURL: dir)
+        let url = library.vmsURL.appending(path: "Agent.cove")
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        try VMBundle(url: url).writeConfig(VMConfig(name: "Agent", cpuCount: 2, memoryBytes: Bytes.gb(4), diskBytes: Bytes.gb(32)))
+        library.reload()
+        XCTAssertTrue(library.isNameTaken("agent", excluding: nil))
+        XCTAssertTrue(library.isNameTaken("AGENT!", excluding: nil))
+        XCTAssertEqual(library.uniqueName("agent"), "agent 2")
+        XCTAssertFalse(library.isNameTaken("Agent", excluding: library.items.first?.id))
     }
 }

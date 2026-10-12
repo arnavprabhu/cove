@@ -80,7 +80,10 @@ final class VMLibrary {
             var stale = false
             if let url = try? URL(resolvingBookmarkData: data, options: .withSecurityScope, bookmarkDataIsStale: &stale),
                url.startAccessingSecurityScopedResource() {
-                return url
+                // Earlier builds bookmarked the parent folder; the library is the "Cove" folder inside it.
+                let nested = url.appending(path: "Cove", directoryHint: .isDirectory)
+                let hasVMs = { (u: URL) in FileManager.default.fileExists(atPath: u.appending(path: "VMs").path) }
+                return !hasVMs(url) && hasVMs(nested) ? nested : url
             }
         }
         return defaultRootURL
@@ -183,9 +186,29 @@ final class VMLibrary {
         }
     }
 
-    /// Suspends every running VM (used on quit when the "suspend on quit" preference is on).
-    func suspendAll() async {
-        for item in liveItems { try? await item.session?.suspend() }
+    struct QuitFailure { var name: String; var message: String }
+
+    /// Suspends every running VM (quit with "Suspend VMs on quit" on). Returns the VMs that couldn't be saved.
+    func suspendAll() async -> [QuitFailure] {
+        var failures: [QuitFailure] = []
+        for item in liveItems {
+            do { try await item.session?.suspend() }
+            catch { failures.append(.init(name: item.name, message: error.localizedDescription)) }
+        }
+        return failures
+    }
+
+    /// Asks every running VM to shut down, waits up to `timeout`, then force-stops stragglers.
+    func shutDownAll(timeout: Duration = .seconds(30)) async -> [QuitFailure] {
+        var failures: [QuitFailure] = []
+        for item in liveItems { try? item.session?.requestShutDown() }
+        let deadline = ContinuousClock.now + timeout
+        while !liveItems.isEmpty, ContinuousClock.now < deadline { try? await Task.sleep(for: .milliseconds(500)) }
+        for item in liveItems {
+            do { try await item.session?.forceStop() }
+            catch { failures.append(.init(name: item.name, message: error.localizedDescription)) }
+        }
+        return failures
     }
 
     // MARK: Editing
@@ -208,10 +231,12 @@ final class VMLibrary {
         item.config = cfg
         if diskResized { item.bundle.removeSaveState() }
         item.refresh()
+        GuestAccess.refreshHostConfig(library: self)
     }
 
     private func rename(_ item: VMItem, to name: String) throws {
         guard !name.isEmpty else { return }
+        guard !isNameTaken(name, excluding: item.id) else { throw CoveError.alreadyExists(name) }
         let dest = vmsURL.appending(path: "\(sanitize(name)).\(VMBundle.pathExtension)")
         guard dest != item.bundle.url else { return }
         guard item.session == nil else { throw CoveError.vmIsRunning }
@@ -226,6 +251,7 @@ final class VMLibrary {
         try FileManager.default.trashItem(at: item.bundle.url, resultingItemURL: nil)
         items.removeAll { $0.id == item.id }
         noteStorageChanged()
+        GuestAccess.refreshHostConfig(library: self)
     }
 
     /// Clones the VM (APFS copy-on-write) with a new machine identifier and MAC address.
@@ -260,6 +286,7 @@ final class VMLibrary {
             let item = VMItem(bundle: bundle, config: cfg)
             items.insert(item, at: 0)
             noteStorageChanged()
+            GuestAccess.refreshHostConfig(library: self)
             return item
         } catch {
             try? fm.removeItem(at: dest)
@@ -285,18 +312,46 @@ final class VMLibrary {
     /// Imports a `.cove` package into the library (cloned, gets a new library id if it collides).
     @discardableResult
     func importVM(from url: URL) throws -> VMItem {
+        // An imported bundle is untrusted: refuse symlinks anywhere in it (a linked disk or snapshot could pull
+        // host files, such as Cove's SSH key, into a VM).
+        if let link = Self.firstSymlink(in: url) {
+            throw CoveError.io("“\(url.lastPathComponent)” can’t be imported: it contains a link (\(link)).")
+        }
         let src = VMBundle(url: url)
         var cfg = try src.readConfig()
         cfg.name = uniqueName(cfg.name)
         if item(id: cfg.id) != nil { cfg.id = UUID() }
+        // A copy is a new machine: new identity and MAC so it never collides with the original.
+        cfg.macAddress = VZMACAddress.randomLocallyAdministered().string
+        cfg.lastUsedAt = nil
         let dest = vmsURL.appending(path: "\(sanitize(cfg.name)).\(VMBundle.pathExtension)")
         try FileManager.default.copyItem(at: url, to: dest) // clonefile-backed on APFS
         let bundle = VMBundle(url: dest)
-        bundle.removeSaveState()
-        try bundle.writeConfig(cfg)
+        do {
+            bundle.removeSaveState()
+            try? FileManager.default.removeItem(at: bundle.guestFolderURL)
+            try? FileManager.default.removeItem(at: bundle.guestStatusURL)
+            try bundle.regenerateMachineIdentifier()
+            try bundle.writeConfig(cfg)
+        } catch {
+            try? FileManager.default.removeItem(at: dest)
+            throw error
+        }
         let item = VMItem(bundle: bundle, config: cfg)
         items.insert(item, at: 0)
+        noteStorageChanged()
+        GuestAccess.refreshHostConfig(library: self)
         return item
+    }
+
+    /// Relative path of the first symbolic link inside `root`, if any.
+    nonisolated static func firstSymlink(in root: URL) -> String? {
+        let keys: [URLResourceKey] = [.isSymbolicLinkKey]
+        guard let e = FileManager.default.enumerator(at: root, includingPropertiesForKeys: keys) else { return nil }
+        for case let file as URL in e where (try? file.resourceValues(forKeys: Set(keys)))?.isSymbolicLink == true {
+            return String(file.path.dropFirst(root.path.count + 1))
+        }
+        return nil
     }
 
     // MARK: Install
@@ -360,26 +415,37 @@ final class VMLibrary {
         let fm = FileManager.default
         let dest = newRoot.appending(path: "Cove", directoryHint: .isDirectory)
         try fm.createDirectory(at: dest, withIntermediateDirectories: true)
-        for sub in ["VMs", "RestoreImages"] {
+        // The SSH key moves too: guests have its public half in authorized_keys.
+        for sub in ["VMs", "RestoreImages", "SSH"] {
             let from = rootURL.appending(path: sub), to = dest.appending(path: sub)
             if fm.fileExists(atPath: from.path) { try fm.moveItem(at: from, to: to) }
         }
-        let bookmark = try newRoot.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
+        // Bookmark the library folder itself (not the parent the user picked).
+        let bookmark = try dest.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
         UserDefaults.standard.set(bookmark, forKey: Pref.libraryBookmark)
+        _ = dest.startAccessingSecurityScopedResource()
         rootURL = dest
         items = []
         ensureFolders()
         reload()
+        GuestAccess.refreshHostConfig(library: self)
     }
 
     // MARK: Naming
 
+    /// A name not used by any VM — including names that would produce the same `ssh cove-…` alias.
     func uniqueName(_ base: String) -> String {
-        let names = Set(items.map(\.name))
-        guard names.contains(base) else { return base }
+        func taken(_ name: String) -> Bool { isNameTaken(name, excluding: nil) }
+        guard taken(base) else { return base }
         var n = 2
-        while names.contains("\(base) \(n)") { n += 1 }
+        while taken("\(base) \(n)") { n += 1 }
         return "\(base) \(n)"
+    }
+
+    /// Display names must be unique, and so must the SSH aliases derived from them ("Agent" vs "agent").
+    func isNameTaken(_ name: String, excluding id: UUID?) -> Bool {
+        let alias = GuestAccess.alias(for: name)
+        return items.contains { $0.id != id && ($0.name == name || GuestAccess.alias(for: $0.name) == alias) }
     }
 
     func sanitize(_ name: String) -> String {

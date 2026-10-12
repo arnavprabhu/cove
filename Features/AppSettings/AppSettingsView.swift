@@ -128,7 +128,7 @@ struct AppSettingsView: View {
             CardDivider()
             toggleRow(
                 "Suspend VMs on quit",
-                subtitle: "Otherwise running VMs keep going until you stop them",
+                subtitle: "Running VMs pick up where they left off next time. When off, Cove shuts them down when you quit.",
                 isOn: $suspendOnQuit
             )
         }

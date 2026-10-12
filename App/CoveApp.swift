@@ -107,18 +107,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         }
     }
 
+    /// VMs run inside Cove's process, so they can't outlive it. On quit they're either suspended (default) or,
+    /// with "Suspend VMs on quit" off, shut down after the user confirms. If anything fails, Cove stays open.
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        let library = MainActor.assumeIsolated { VMLibrary.shared }
-        guard MainActor.assumeIsolated({ !library.liveItems.isEmpty }) else { return .terminateNow }
-        // Suspend running VMs so they resume where they left off next launch.
-        Task { @MainActor in
-            await library.suspendAll()
-            sender.reply(toApplicationShouldTerminate: true)
+        MainActor.assumeIsolated {
+            let library = VMLibrary.shared
+            let live = library.liveItems
+            guard !live.isEmpty else { return .terminateNow }
+            let suspend = UserDefaults.standard.object(forKey: Pref.suspendOnQuit) as? Bool ?? true
+            if !suspend {
+                let alert = NSAlert()
+                alert.messageText = live.count == 1 ? "Shut down “\(live[0].name)” and quit?" : "Shut down \(live.count) VMs and quit?"
+                alert.informativeText = "Running VMs can’t keep going after Cove quits. Unsaved work inside them may be lost. "
+                    + "To pick up where you left off instead, turn on Suspend VMs on quit in Settings."
+                alert.addButton(withTitle: "Shut Down and Quit")
+                alert.addButton(withTitle: "Cancel")
+                guard alert.runModal() == .alertFirstButtonReturn else { return .terminateCancel }
+            }
+            Task { @MainActor in
+                let failures = suspend ? await library.suspendAll() : await library.shutDownAll()
+                if failures.isEmpty {
+                    sender.reply(toApplicationShouldTerminate: true)
+                } else {
+                    sender.reply(toApplicationShouldTerminate: false)
+                    let alert = NSAlert()
+                    alert.alertStyle = .warning
+                    alert.messageText = "Cove didn’t quit"
+                    alert.informativeText = failures.map { "\($0.name): \($0.message)" }.joined(separator: "\n")
+                        + "\n\nYour VMs are still running. Free up disk space or shut them down, then quit again."
+                    alert.runModal()
+                }
+            }
+            return .terminateLater
         }
-        return .terminateLater
     }
 
-    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        !(UserDefaults.standard.object(forKey: Pref.keepRunningInMenuBar) as? Bool ?? true)
+    }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {

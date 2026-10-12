@@ -48,8 +48,8 @@ enum ConfigurationBuilder {
         }
 
         var accessed: [URL] = []
-        let coveFolder = config.access.enabled ? bundle.guestFolderURL : nil
-        if let fs = sharedFolders(config.shares, coveFolder: coveFolder, accessed: &accessed) {
+        let coveFolders = config.access.enabled ? (bundle.guestFolderURL, bundle.guestStatusURL) : nil
+        if let fs = sharedFolders(config.shares, coveFolders: coveFolders, accessed: &accessed) {
             c.directorySharingDevices = [fs]
         }
 
@@ -96,11 +96,17 @@ enum ConfigurationBuilder {
         return [net]
     }
 
-    private static func sharedFolders(_ shares: [SharedFolder], coveFolder: URL?,
+    private static func sharedFolders(_ shares: [SharedFolder], coveFolders: (files: URL, status: URL)?,
                                       accessed: inout [URL]) -> VZVirtioFileSystemDeviceConfiguration? {
         var dirs: [String: VZSharedDirectory] = [:]
-        // Inside the VM bundle, so no bookmark needed. Writable so setup.sh can report back.
-        if let coveFolder { dirs[GuestAccess.shareName] = VZSharedDirectory(url: coveFolder, readOnly: false) }
+        // Inside the VM bundle, so no bookmark needed. The guest can't change the setup script or key (read-only);
+        // it reports back only through the separate status folder.
+        if let coveFolders {
+            try? GuestAccess.ensureRealDirectory(coveFolders.files)
+            try? GuestAccess.ensureRealDirectory(coveFolders.status)
+            dirs[GuestAccess.shareName] = VZSharedDirectory(url: coveFolders.files, readOnly: true)
+            dirs[GuestAccess.statusShareName] = VZSharedDirectory(url: coveFolders.status, readOnly: false)
+        }
         for share in shares where share.enabled {
             var stale = false
             guard let url = try? URL(resolvingBookmarkData: share.bookmark, options: .withSecurityScope,

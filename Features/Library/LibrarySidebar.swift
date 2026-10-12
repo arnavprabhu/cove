@@ -178,6 +178,7 @@ private struct VMSidebarRow: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.name)
                     .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(selected ? Color.white : Theme.textPrimary)
                     .lineLimit(1)
                 HStack(spacing: 5) {
                     StatusDot(color: item.state.color, size: 6)

@@ -312,16 +312,17 @@ struct VMDetailView: View {
 struct RestoreImagesDetailView: View {
     @Environment(VMLibrary.self) private var library
     @State private var alert: CoveAlert?
+    @State private var images: [URL] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            header("Restore Images", subtitle: "\(library.restoreImages.count) cached")
-            if library.restoreImages.isEmpty {
+            header("Restore Images", subtitle: "\(images.count) cached")
+            if images.isEmpty {
                 emptyState("No restore images",
                            "Downloaded macOS installers appear here so you can reuse them.")
             } else {
                 List {
-                    ForEach(library.restoreImages, id: \.path) { url in
+                    ForEach(images, id: \.path) { url in
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(url.lastPathComponent)
@@ -338,7 +339,7 @@ struct RestoreImagesDetailView: View {
                             Button("Delete", role: .destructive) {
                                 trash(url)
                             }
-                            .buttonStyle(.covesecondary)
+                            .buttonStyle(SecondaryButtonStyle(destructive: true))
                         }
                         .padding(.vertical, 4)
                     }
@@ -347,6 +348,7 @@ struct RestoreImagesDetailView: View {
         }
         .background(Theme.windowBackground)
         .coveAlert($alert)
+        .onAppear { images = library.restoreImages }
     }
 
     private func fileSize(_ url: URL) -> UInt64 {
@@ -356,6 +358,7 @@ struct RestoreImagesDetailView: View {
     private func trash(_ url: URL) {
         do {
             try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+            images = library.restoreImages
         } catch {
             alert = .from(error)
         }

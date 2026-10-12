@@ -172,6 +172,7 @@ final class VMInstallJob: Identifiable {
             stageProgress = 1
             enter(.done)
             status = .finished
+            library.noteStorageChanged()
             InstallNotifier.postReady(vmName: item.name, vmID: item.id)
         } catch is CancellationError {
             status = .cancelled

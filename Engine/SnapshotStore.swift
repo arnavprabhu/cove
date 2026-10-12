@@ -47,6 +47,7 @@ enum SnapshotStore {
             throw error
         }
         item.reloadSnapshots()
+        VMLibrary.shared.noteStorageChanged()
         return snap
     }
 
@@ -82,6 +83,7 @@ enum SnapshotStore {
     static func delete(_ snapshot: Snapshot, of item: VMItem) throws {
         try FileManager.default.removeItem(at: dir(item.bundle, snapshot.id))
         item.reloadSnapshots()
+        VMLibrary.shared.noteStorageChanged()
     }
 
     static func rename(_ snapshot: Snapshot, of item: VMItem, to name: String) throws {

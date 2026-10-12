@@ -57,6 +57,10 @@ final class VMLibrary {
     private(set) var rootURL: URL
     private(set) var items: [VMItem] = []
     private(set) var installJobs: [VMInstallJob] = []
+    /// Bumped whenever files in the library change, so disk-derived lists (restore images) re-render.
+    private(set) var storageRevision = 0
+    /// Bytes allocated by the library folder; recomputed off the main thread after changes.
+    private(set) var totalAllocated: UInt64 = 0
 
     var vmsURL: URL { rootURL.appending(path: "VMs", directoryHint: .isDirectory) }
     var restoreImagesURL: URL { rootURL.appending(path: "RestoreImages", directoryHint: .isDirectory) }
@@ -106,6 +110,17 @@ final class VMLibrary {
             next.append(item)
         }
         items = next.sorted { ($0.config.lastUsedAt ?? $0.config.createdAt) > ($1.config.lastUsedAt ?? $1.config.createdAt) }
+        noteStorageChanged()
+    }
+
+    /// Call after anything adds or removes files in the library.
+    func noteStorageChanged() {
+        storageRevision += 1
+        let root = rootURL
+        Task.detached(priority: .utility) {
+            let bytes = FileClone.allocatedSize(of: root)
+            await MainActor.run { [weak self] in self?.totalAllocated = bytes }
+        }
     }
 
     func item(id: UUID) -> VMItem? { items.first { $0.id == id } }
@@ -134,7 +149,7 @@ final class VMLibrary {
             guard let item else { return }
             item.session = nil
             item.refresh()
-            self?.objectWillChangeHack()
+            self?.noteStorageChanged()
         }
         item.session = session
         do {
@@ -155,8 +170,6 @@ final class VMLibrary {
     func suspendAll() async {
         for item in liveItems { try? await item.session?.suspend() }
     }
-
-    private func objectWillChangeHack() { items = items }
 
     // MARK: Editing
 
@@ -195,6 +208,7 @@ final class VMLibrary {
         guard item.session == nil else { throw CoveError.vmIsRunning }
         try FileManager.default.trashItem(at: item.bundle.url, resultingItemURL: nil)
         items.removeAll { $0.id == item.id }
+        noteStorageChanged()
     }
 
     /// Clones the VM (APFS copy-on-write) with a new machine identifier and MAC address.
@@ -228,6 +242,7 @@ final class VMLibrary {
             try bundle.writeConfig(cfg)
             let item = VMItem(bundle: bundle, config: cfg)
             items.insert(item, at: 0)
+            noteStorageChanged()
             return item
         } catch {
             try? fm.removeItem(at: dest)
@@ -293,18 +308,25 @@ final class VMLibrary {
     func discard(_ item: VMItem) {
         try? FileManager.default.removeItem(at: item.bundle.url)
         items.removeAll { $0.id == item.id }
+        noteStorageChanged()
     }
 
     // MARK: Storage
 
-    var totalAllocated: UInt64 { FileClone.allocatedSize(of: rootURL) }
-
     var freeSpace: UInt64 { HostInfo.freeDiskSpace(at: rootURL) }
 
     var restoreImages: [URL] {
-        ((try? FileManager.default.contentsOfDirectory(at: restoreImagesURL, includingPropertiesForKeys: [.fileSizeKey])) ?? [])
+        _ = storageRevision
+        return ((try? FileManager.default.contentsOfDirectory(at: restoreImagesURL, includingPropertiesForKeys: [.fileSizeKey])) ?? [])
             .filter { $0.pathExtension == "ipsw" }
             .sorted { $0.lastPathComponent > $1.lastPathComponent }
+    }
+
+    /// Moves a cached restore image (and any partial-download resume data) to the Trash.
+    func deleteRestoreImage(_ url: URL) throws {
+        try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+        try? FileManager.default.removeItem(at: url.appendingPathExtension("resume"))
+        noteStorageChanged()
     }
 
     /// Moves the whole library to a user-chosen folder (all VMs must be stopped).

@@ -442,7 +442,7 @@ struct AppSettingsView: View {
 
     private func removeRestoreImage(_ url: URL) {
         do {
-            try FileManager.default.removeItem(at: url)
+            try library.deleteRestoreImage(url)
             restoreListTick += 1
         } catch {
             alert = .from(error)

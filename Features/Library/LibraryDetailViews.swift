@@ -357,7 +357,7 @@ struct RestoreImagesDetailView: View {
 
     private func trash(_ url: URL) {
         do {
-            try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+            try library.deleteRestoreImage(url)
             images = library.restoreImages
         } catch {
             alert = .from(error)

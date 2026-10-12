@@ -73,9 +73,9 @@ private struct CoveAlertModifier: ViewModifier {
     private var title: String {
         switch alert {
         case .licenseLimit: "Two macOS VMs are already running"
-        case .confirmDelete(_, let name, _): "Move “\(name)” to the Trash?"
-        case .lowDiskSpace: "Your Mac is low on disk space"
-        case .downloadFailed: "The download didn’t finish"
+        case .confirmDelete(_, let name, _): "Delete “\(name)”?"
+        case .lowDiskSpace: "Not enough space for a new VM"
+        case .downloadFailed: "Couldn’t finish downloading macOS"
         case .error(let t, _): t
         case nil: ""
         }
@@ -84,13 +84,14 @@ private struct CoveAlertModifier: ViewModifier {
     private func message(_ a: CoveAlert) -> String {
         switch a {
         case .licenseLimit:
-            "macOS allows up to two macOS virtual machines to run at the same time. Shut one down or suspend it, then try again."
+            "Apple’s macOS license allows two macOS virtual machines at a time on one Mac. Suspend one, then try again."
         case .confirmDelete(_, _, let n):
-            "Its virtual disk" + (n > 0 ? " and \(n) snapshot\(n == 1 ? "" : "s")" : "") + " will be moved to the Trash."
+            "The VM’s disk" + (n > 0 ? " and its \(n) snapshot\(n == 1 ? "" : "s")" : "")
+                + " will be moved to the Trash. Files in shared folders on your Mac aren’t affected."
         case .lowDiskSpace(let available):
-            "Only \(Bytes.format(available)) is available. Running VMs may pause if the disk fills up."
+            "Cove needs about \(Bytes.format(HostInfo.estimatedInstallFootprint)) free to download and install macOS. Your Mac has \(Bytes.format(available)) available."
         case .downloadFailed(_, let message, let resumable):
-            message + (resumable ? " Cove can pick up where it left off." : "")
+            message + (resumable ? " Cove kept what was downloaded and will pick up from there." : "")
         case .error(_, let m):
             m
         }

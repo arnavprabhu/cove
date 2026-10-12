@@ -26,6 +26,12 @@ xcodebuild -project Cove.xcodeproj -scheme Cove -derivedDataPath build/dd build
 xcodebuild -project Cove.xcodeproj -scheme Cove -derivedDataPath build/dd test
 ```
 
+Install to `/Applications` (Release build, replaces any previous copy; running VMs are suspended first):
+
+```sh
+scripts/install.sh
+```
+
 Debug builds are ad-hoc signed with `com.apple.security.virtualization` and the App Sandbox. Release
 distribution is Developer ID + notarization (set `DEVELOPMENT_TEAM` / signing in `project.yml`).
 
